@@ -162,6 +162,10 @@ class JudgeProfile(models.Model):
     skill_tags = models.JSONField(default=list, blank=True)
     coi_emails = models.JSONField(default=list, blank=True)
     coi_domains = models.JSONField(default=list, blank=True)
+    public_passport = models.BooleanField(
+        default=False,
+        help_text="Show this judge's certificates on a public passport page (opt-in).",
+    )
 
     def __str__(self) -> str:
         return f"judge profile of {self.user}"

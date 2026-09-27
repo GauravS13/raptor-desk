@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Judge passport · {{ judge.name }}{% endblock %}
+
+{% block content %}
+<hgroup>
+  <h1>{{ judge.name }}</h1>
+  <p>Judge passport: verified judging, signed by this Raptor Desk</p>
+</hgroup>
+{% if items %}
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th scope="col">Certificate</th><th scope="col">Event</th><th scope="col">Projects reviewed</th><th scope="col">Issued</th><th scope="col">Check</th></tr></thead>
+    <tbody>
+    {% for item in items %}
+      <tr>
+        <td>{{ item.label }}</td><td>{{ item.event.name }}</td><td>{{ item.payload.projects_reviewed }}</td>
+        <td>{{ item.issued_at|date:"Y-m-d" }}</td><td><a href="/verify/{{ item.code }}">verify</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+{% else %}
+  <p class="muted">No certificates yet: they are issued when an event publishes its results.</p>
+{% endif %}
+<p class="muted">The judge chose to make this page public. It never shows scores.</p>
+{% endblock %}

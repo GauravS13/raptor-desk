@@ -15,6 +15,7 @@ from apps.judging import (
     exports,
     feedback,
     ledger,
+    passport,
     publishing,
     repositories,
     services,
@@ -860,3 +861,52 @@ def verify_record(request: HttpRequest, code: str) -> dict[str, Any]:
     """A public certificate or participation record, with whether its signature holds."""
     document = credentials.signed_document(credentials.public_record(code))
     return {**document, "valid": credentials.verify(document)}
+
+
+class PassportIn(Schema):
+    public: bool
+
+
+class PassportEntryOut(Schema):
+    number: str
+    event_id: str
+    event_name: str
+    projects_reviewed: int
+    issued_at: datetime
+    verify_url: str
+
+
+class PassportOut(Schema):
+    judge_id: str
+    name: str
+    certificates: list[PassportEntryOut]
+
+
+@router.post("/me/passport", response=PassportIn)
+@api_action("judging.passport")
+@policy(JUDGE_SELF)
+def set_passport(request: HttpRequest, payload: PassportIn) -> PassportIn:
+    """Make your judge passport public or private (it starts private)."""
+    return PassportIn(public=passport.set_public(get_principal(request), payload.public))
+
+
+@router.get("/judges/{judge_id}/passport", response=PassportOut)
+@policy(PUBLIC_VERIFY)
+def get_passport(request: HttpRequest, judge_id: str) -> PassportOut:
+    """A judge's certificates across events, if they made their passport public. No scores."""
+    user, items = passport.passport(judge_id)
+    return PassportOut(
+        judge_id=user.pk,
+        name=user.name,
+        certificates=[
+            PassportEntryOut(
+                number=item.label,
+                event_id=item.event_id,
+                event_name=item.event.name,
+                projects_reviewed=item.payload.get("projects_reviewed", 0),
+                issued_at=item.issued_at,
+                verify_url=f"/verify/{item.code}",
+            )
+            for item in items
+        ],
+    )

@@ -18,6 +18,7 @@ from apps.judging import (
     exports,
     feedback,
     ledger,
+    passport,
     publishing,
     services,
     snapshots,
@@ -41,8 +42,14 @@ def judge_home(request: HttpRequest) -> HttpResponse:
         group = events.setdefault(item.event_id, {"event": item.event, "items": [], "done": 0})
         group["items"].append(item)
         group["done"] += item.status == "done"
-    documents = credentials.Credential.objects.filter(user_id=get_principal(request).user_id)
-    context = {"groups": list(events.values()), "documents": documents.select_related("event")}
+    principal = get_principal(request)
+    documents = credentials.Credential.objects.filter(user_id=principal.user_id)
+    context = {
+        "groups": list(events.values()),
+        "documents": documents.select_related("event"),
+        "passport_public": passport.is_public(principal.user_id or ""),
+        "judge_id": principal.user_id,
+    }
     return render(request, "judging/queue.html", context)
 
 
@@ -523,3 +530,22 @@ def verify_page(request: HttpRequest, code: str) -> HttpResponse:
         "event": item.event,
     }
     return render(request, "judging/verify_record.html", context)
+
+
+@require_POST
+@ui_action("judging.passport")
+@policy(JUDGE_SELF)
+def passport_toggle(request: HttpRequest) -> HttpResponse:
+    public = passport.set_public(get_principal(request), request.POST.get("public") == "1")
+    messages.success(
+        request,
+        "Your judge passport is public." if public else "Your judge passport is private.",
+    )
+    return HttpResponseRedirect("/judge")
+
+
+@require_GET
+@policy(PUBLIC_VERIFY)
+def passport_page(request: HttpRequest, judge_id: str) -> HttpResponse:
+    user, items = passport.passport(judge_id)
+    return render(request, "judging/passport.html", {"judge": user, "items": items})

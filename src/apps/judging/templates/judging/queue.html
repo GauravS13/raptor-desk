@@ -38,6 +38,18 @@
       </li>
     {% endfor %}
   </ul>
+  <form method="post" action="/judge/passport">
+    {% csrf_token %}
+    {% if passport_public %}
+      <input type="hidden" name="public" value="0">
+      <p>Your <a href="/judges/{{ judge_id }}/passport">judge passport</a> is public: it lists your certificates, never your scores.</p>
+      <button type="submit" class="secondary outline">Make it private</button>
+    {% else %}
+      <input type="hidden" name="public" value="1">
+      <p class="muted">A public judge passport lists your certificates across events on one page you can share. It never shows scores.</p>
+      <button type="submit" class="secondary outline">Make my passport public</button>
+    {% endif %}
+  </form>
 </section>
 {% endif %}
 {% endblock %}
