@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}Not found · Raptor Desk{% endblock %}
+
+{% block content %}
+<h1>Not found</h1>
+<p>{% if error %}{{ error.message }}{% else %}That page does not exist.{% endif %}</p>
+<p><a href="/">Back to the start page</a></p>
+{% endblock %}
