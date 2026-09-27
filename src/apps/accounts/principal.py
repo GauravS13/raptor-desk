@@ -10,12 +10,12 @@ from collections.abc import Callable
 
 from django.http import HttpRequest, HttpResponse
 
-from apps.accounts.models import ApiToken, User
+from apps.accounts.models import ApiToken, RoleGrant, User
 from core.policy import ANONYMOUS, Principal, is_api_request
 
 
 def load_grants(user: User) -> dict[str, frozenset[str]]:
-    """Per-event roles for ``user``. Filled in once role grants exist."""
+    """Per-event roles for ``user``, e.g. {"evt_01": {"judge"}}."""
     grants: dict[str, set[str]] = {}
     for event_id, role in _grant_rows(user):
         grants.setdefault(event_id, set()).add(role)
@@ -23,7 +23,7 @@ def load_grants(user: User) -> dict[str, frozenset[str]]:
 
 
 def _grant_rows(user: User) -> list[tuple[str, str]]:
-    return []
+    return list(RoleGrant.objects.filter(user=user).values_list("event_id", "role"))
 
 
 def principal_for(user: User, auth: str) -> Principal:

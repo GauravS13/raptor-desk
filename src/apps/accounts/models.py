@@ -165,3 +165,37 @@ class JudgeProfile(models.Model):
 
     def __str__(self) -> str:
         return f"judge profile of {self.user}"
+
+
+def _grant_id() -> str:
+    return new_id("grt")
+
+
+class Role(models.TextChoices):
+    PARTICIPANT = "participant", "Participant"
+    JUDGE = "judge", "Judge"
+    ORGANIZER = "organizer", "Organizer"
+
+
+class RoleGrant(models.Model):
+    """A user's role in one event. Roles never leak across events.
+
+    The same person can judge one event and compete in another, which is
+    common among a community's senior members.
+    """
+
+    id = models.CharField(primary_key=True, max_length=40, default=_grant_id, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="grants")
+    event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="grants")
+    role = models.CharField(max_length=20, choices=Role.choices)
+    created_at = models.DateTimeField(default=clock.now)
+    created_by_id = models.CharField(max_length=40, blank=True)
+
+    class Meta:
+        ordering: ClassVar[list[str]] = ["event_id", "role", "user_id"]
+        constraints: ClassVar[list[models.BaseConstraint]] = [
+            models.UniqueConstraint(fields=["user", "event", "role"], name="grant_unique")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.user} is {self.role} in {self.event_id}"

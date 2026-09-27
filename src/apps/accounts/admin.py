@@ -2,7 +2,7 @@ from typing import ClassVar
 
 from django.contrib import admin
 
-from apps.accounts.models import ApiToken, User
+from apps.accounts.models import ApiToken, JudgeProfile, RoleGrant, User
 
 
 @admin.register(User)
@@ -19,3 +19,16 @@ class ApiTokenAdmin(admin.ModelAdmin):
     list_display = ("label", "user", "is_seed", "created_at", "last_used_at", "revoked_at")
     list_filter = ("is_seed",)
     readonly_fields = ("id", "token_hash", "created_at", "last_used_at")
+
+
+@admin.register(RoleGrant)
+class RoleGrantAdmin(admin.ModelAdmin):
+    list_display = ("user", "event", "role", "created_at")
+    list_filter = ("role",)
+    search_fields = ("user__email", "event__name")
+
+
+@admin.register(JudgeProfile)
+class JudgeProfileAdmin(admin.ModelAdmin):
+    list_display = ("user",)
+    search_fields = ("user__email",)
