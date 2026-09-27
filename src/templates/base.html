@@ -20,6 +20,7 @@
       <ul>
         {% block nav %}{% endblock %}
         {% if principal.is_authenticated %}
+          <li><a href="/o/">Organize</a></li>
           <li><span class="muted">{{ principal.email }}</span></li>
           <li>
             <form method="post" action="/logout" class="inline">
@@ -34,6 +35,11 @@
     </nav>
   </header>
   <main id="main" class="container">
+    {% if messages %}
+      <div class="messages" role="status">
+        {% for message in messages %}<p class="notice {{ message.tags }}">{{ message }}</p>{% endfor %}
+      </div>
+    {% endif %}
     {% block content %}{% endblock %}
   </main>
   <footer class="container">

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Organize · Raptor Desk{% endblock %}
+
+{% block content %}
+<hgroup>
+  <h1>Your events</h1>
+  <p>Events you organize.</p>
+</hgroup>
+{% if can_create %}<p><a href="/o/events/new" role="button">New event</a></p>{% endif %}
+{% if events %}
+<div class="table-wrap">
+  <table>
+    <thead><tr><th scope="col">Event</th><th scope="col">Phase</th><th scope="col">Submissions close (UTC)</th></tr></thead>
+    <tbody>
+    {% for event in events %}
+      <tr>
+        <td><a href="/o/events/{{ event.id }}">{{ event.name }}</a></td>
+        <td>{{ event.get_phase_display }}</td>
+        <td>{{ event.submissions_close_at|date:"Y-m-d H:i"|default:"not set" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p>You do not organize any events yet.</p>
+{% endif %}
+{% endblock %}

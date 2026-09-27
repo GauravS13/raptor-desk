@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}New event · Raptor Desk{% endblock %}
+
+{% block content %}
+<article class="narrow">
+  <h1>New event</h1>
+  {% if form.non_field_errors %}<p class="notice error" role="alert">{{ form.non_field_errors|join:" " }}</p>{% endif %}
+  <form method="post" action="/o/events/new">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <button type="submit">Create event</button>
+  </form>
+  <p><small>A template sets the rubric, prizes and settings in one step. You can change them afterwards.</small></p>
+</article>
+{% endblock %}

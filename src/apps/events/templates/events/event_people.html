@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}People · {{ event.name }}{% endblock %}
+
+{% block content %}
+{% include "events/_event_header.html" %}
+
+<section aria-labelledby="add-person">
+  <h2 id="add-person">Add a person</h2>
+  {% if form.non_field_errors %}<p class="notice error" role="alert">{{ form.non_field_errors|join:" " }}</p>{% endif %}
+  <form method="post" action="/o/events/{{ event.id }}/people">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <button type="submit">Grant role</button>
+  </form>
+</section>
+
+<section aria-labelledby="people">
+  <h2 id="people">People in this event</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">Email</th><th scope="col">Name</th><th scope="col">Role</th><th scope="col"><span class="muted">Actions</span></th></tr></thead>
+      <tbody>
+      {% for grant in grants %}
+        <tr>
+          <td>{{ grant.user.email }}</td>
+          <td>{{ grant.user.name }}</td>
+          <td>{{ grant.get_role_display }}</td>
+          <td>
+            <form method="post" action="/o/events/{{ event.id }}/people/{{ grant.user_id }}/{{ grant.role }}/revoke" class="inline">
+              {% csrf_token %}
+              <button type="submit" class="secondary outline">Remove</button>
+            </form>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4">Nobody yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

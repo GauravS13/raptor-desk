@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Rubric · {{ event.name }}{% endblock %}
+
+{% block content %}
+{% include "events/_event_header.html" %}
+
+{% if locked %}
+<p class="notice warning">The rubric is locked because judging has started. Every review uses the same criteria.</p>
+{% endif %}
+
+<form method="post" action="/o/events/{{ event.id }}/rubric">
+  {% csrf_token %}
+  {{ formset.management_form }}
+  <label for="{{ meta.weighting.id_for_label }}">Weighting</label>
+  {{ meta.weighting }}
+  <p><small>Percent: scored criteria sum to 100. Multipliers: relative weights. Gate criteria decide whether a project is scored at all; bonus criteria only break ties.</small></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Key</th><th scope="col">Label</th><th scope="col">Weight</th>
+          <th scope="col">Min</th><th scope="col">Max</th><th scope="col">Gate</th>
+          <th scope="col">Gate threshold</th><th scope="col">Bonus</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in formset %}
+        <tr>
+          <td>{{ row.key }}</td><td>{{ row.label }}</td><td>{{ row.weight }}</td>
+          <td>{{ row.min_score }}</td><td>{{ row.max_score }}</td><td>{{ row.is_gate }}</td>
+          <td>{{ row.gate_threshold }}</td><td>{{ row.is_bonus }}{{ row.description.as_hidden }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <button type="submit" {% if locked %}disabled{% endif %}>Save rubric</button>
+</form>
+
+<article>
+  <header><strong>Start from a template</strong></header>
+  <form method="post" action="/o/events/{{ event.id }}/rubric/template">
+    {% csrf_token %}
+    {{ template_form.key }}
+    <button type="submit" class="secondary" {% if locked %}disabled{% endif %}>Apply template</button>
+  </form>
+</article>
+{% endblock %}

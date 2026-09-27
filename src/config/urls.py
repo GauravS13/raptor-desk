@@ -10,6 +10,7 @@ urlpatterns = [
     path("healthz", healthz, name="healthz"),
     path(".well-known/raptor-desk-key", signing_key, name="signing-key"),
     path("", include("apps.accounts.urls")),
+    path("", include("apps.events.urls")),
     path("api/", api.urls),
     path("admin/", admin.site.urls),
 ]

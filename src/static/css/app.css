@@ -57,3 +57,70 @@ form.inline button {
 .notice.error {
   border-left: 4px solid var(--pico-del-color);
 }
+
+.notice.success {
+  border-left: 4px solid var(--pico-ins-color);
+}
+
+.notice.warning {
+  border-left: 4px solid #d99a00;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  padding: 0;
+  margin: 0 0 1.5rem;
+  list-style: none;
+  border-bottom: 1px solid var(--pico-muted-border-color);
+}
+
+.tabs li {
+  list-style: none;
+}
+
+.tabs a {
+  display: inline-block;
+  padding: 0.5rem 0;
+  text-decoration: none;
+}
+
+.tabs a[aria-current="page"] {
+  font-weight: 700;
+  border-bottom: 2px solid var(--pico-primary);
+}
+
+.phase-track {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+.phase-track li {
+  list-style: none;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--pico-muted-border-color);
+  font-size: 0.85rem;
+}
+
+.phase-track li.current {
+  background: var(--pico-primary-background);
+  color: var(--pico-primary-inverse);
+  border-color: var(--pico-primary-background);
+}
+
+.checks {
+  padding-left: 1.2rem;
+}
+
+.check-blocking {
+  color: var(--pico-del-color);
+}
+
+.table-wrap {
+  overflow-x: auto;
+}

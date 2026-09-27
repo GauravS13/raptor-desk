@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.name }} · Raptor Desk{% endblock %}
+
+{% block content %}
+{% include "events/_event_header.html" %}
+
+<section aria-labelledby="lifecycle">
+  <h2 id="lifecycle">Lifecycle</h2>
+  <ol class="phase-track">
+    {% for phase in phases %}<li {% if phase == event.phase %}class="current" aria-current="step"{% endif %}>{{ phase }}</li>{% endfor %}
+  </ol>
+
+  {% for phase, label, checks in next_phases %}
+  <article>
+    <header><strong>Move to: {{ label }}</strong></header>
+    {% if checks %}
+      <p>Preflight checks:</p>
+      <ul class="checks">
+        {% for check in checks %}
+          <li class="check-{{ check.level }}"><strong>{{ check.level }}</strong>: {{ check.message }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>All preflight checks pass.</p>
+    {% endif %}
+    <form method="post" action="/o/events/{{ event.id }}/phase">
+      {% csrf_token %}
+      <input type="hidden" name="to" value="{{ phase }}">
+      {% if checks %}
+        <label for="reason-{{ phase }}">Reason (required to override blocking checks)</label>
+        <textarea id="reason-{{ phase }}" name="reason" rows="2"></textarea>
+        <label><input type="checkbox" name="override"> Override blocking checks</label>
+      {% endif %}
+      <button type="submit">Move to {{ label }}</button>
+    </form>
+  </article>
+  {% empty %}
+  <p>This event is in its final phase.</p>
+  {% endfor %}
+</section>
+
+{% if rubric_problems %}
+<section aria-labelledby="rubric-status">
+  <h2 id="rubric-status">Rubric</h2>
+  <ul class="checks">{% for problem in rubric_problems %}<li class="check-blocking">{{ problem }}</li>{% endfor %}</ul>
+  <p><a href="/o/events/{{ event.id }}/rubric">Fix the rubric</a></p>
+</section>
+{% endif %}
+
+<section aria-labelledby="history">
+  <h2 id="history">Phase history</h2>
+  {% if transitions %}
+  <ul>
+    {% for t in transitions %}
+      <li>{{ t.at|date:"Y-m-d H:i" }} UTC: {{ t.from_phase }} → {{ t.to_phase }}{% if t.overridden %} (override: {{ t.reason }}){% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% else %}<p>No phase changes yet.</p>{% endif %}
+</section>
+{% endblock %}

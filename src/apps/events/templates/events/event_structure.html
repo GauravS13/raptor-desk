@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Tracks, prizes and questions · {{ event.name }}{% endblock %}
+
+{% block content %}
+{% include "events/_event_header.html" %}
+
+<div class="grid">
+  <section aria-labelledby="tracks">
+    <h2 id="tracks">Tracks</h2>
+    <ul>{% for track in event.tracks.all %}<li>{{ track.name }}</li>{% empty %}<li>No tracks.</li>{% endfor %}</ul>
+    <form method="post" action="/o/events/{{ event.id }}/tracks">
+      {% csrf_token %}
+      {{ track_form.as_div }}
+      <button type="submit">Add track</button>
+    </form>
+  </section>
+
+  <section aria-labelledby="prizes">
+    <h2 id="prizes">Prizes</h2>
+    <ol>{% for prize in event.prizes.all %}<li>{{ prize.name }}{% if prize.amount %} · {{ prize.amount }}{% endif %}</li>{% empty %}<li>No prizes.</li>{% endfor %}</ol>
+    <form method="post" action="/o/events/{{ event.id }}/prizes">
+      {% csrf_token %}
+      {{ prize_form.as_div }}
+      <button type="submit">Add prize</button>
+    </form>
+  </section>
+</div>
+
+<section aria-labelledby="questions">
+  <h2 id="questions">Submission questions</h2>
+  <p><small>Extra questions every team answers on the submission form.</small></p>
+  <ul>{% for q in event.questions.all %}<li>{{ q.label }} ({{ q.get_kind_display }}{% if q.required %}, required{% endif %})</li>{% empty %}<li>No custom questions.</li>{% endfor %}</ul>
+  <form method="post" action="/o/events/{{ event.id }}/questions">
+    {% csrf_token %}
+    {{ question_form.as_div }}
+    <button type="submit">Add question</button>
+  </form>
+</section>
+{% endblock %}
