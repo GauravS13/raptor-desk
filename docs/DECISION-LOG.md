@@ -150,3 +150,21 @@ added when the decision is made, next to the commit that implements it.
 - **Why:** a ranking that shows its math is only credible if all of it is visible. Naming judges would invite pressure on them and would soften their feedback.
 - **Where:** `src/apps/judging/templates/judging/public_results.html`, `src/apps/judging/feedback.py` · c779bad, 35a79b2
 
+## D-026 · A ledger checked against the live scores
+- **Decided:** every submitted score goes into a hash-chained, signed, append-only ledger. Verification also compares the live scores and feedback with the latest entry for each review. Upgraded deployments are backfilled by a data migration.
+- **Rejected:** a hash chain on its own; relying on the audit log.
+- **Why:** the realistic attack is an edit to the scores table, not to the ledger. A chain that is never compared with the live data proves only that the chain is intact.
+- **Where:** `src/apps/judging/ledger.py`, `migrations/0011_backfill_score_ledger.py` · e656be3, e068e34
+
+## D-027 · Public records are found by random code; the passport is opt-in
+- **Decided:** certificates and participation records carry a display number, but are reached only through a random code. They contain no scores or places. A judge's cross-event passport is off until the judge switches it on.
+- **Rejected:** sequential public URLs; public-by-default passports.
+- **Why:** sequential numbers would let anyone list every participant's name, which the UK GDPR and plain courtesy argue against. The person decides who sees their record.
+- **Where:** `src/apps/judging/credentials.py`, `passport.py` · 8fbfbac, b7945c3
+
+## D-028 · Verification pins the key
+- **Decided:** a signed document is genuine only if its hash matches, its signature holds, and the signing key is this deployment's (`core.signing.check_document`). `tools/verify.py` does the same with `--portal` or `--public-key`, using only the standard library.
+- **Rejected:** trusting the key carried inside the document.
+- **Why:** a forger can re-sign altered content with their own key, and the result is self-consistent. Only a pinned key tells a genuine document from a well-made fake.
+- **Where:** `src/core/signing.py`, `tools/verify.py` · 4d913cb, 018c074
+

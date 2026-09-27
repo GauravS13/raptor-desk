@@ -77,6 +77,16 @@ docker compose exec app python src/manage.py demo_tamper
 It changes one score with a raw SQL `UPDATE`, shows verification failing at that exact entry,
 and puts the score back.
 
+**Signed paperwork:**
+1. Move Sample Hack 2026 to *deliberation*: every judge gets a signed protocol.
+2. Sign in as Judge A: **Judge** lists it, with the ledger entry behind each score.
+3. After publishing, judges get certificates and team members get participation records.
+4. Paste any of them at http://localhost:8080/verify, or check one offline:
+   ```bash
+   python3 tools/verify.py protocol.json --portal http://localhost:8080
+   ```
+   A single changed character makes it fail.
+
 **Audit trail:** the same event's **Audit** tab shows every change, filterable, with CSV download. Edits to it are rejected by the database.
 
 ## Adoptability & Operability (20%)
@@ -97,6 +107,7 @@ and puts the score back.
 
 - `make check` runs lint, formatting, import-linter architecture contracts (the scoring engine may not import Django), a migration check and the full test suite.
 - [ARCHITECTURE.md](ARCHITECTURE.md) and [docs/DECISION-LOG.md](docs/DECISION-LOG.md) explain the design and what was rejected.
+- `tools/verify.py` checks signed documents and ledger exports with only the Python standard library. Its tests include RFC 8032 test vector 1.
 
 **Decisions worth a look:**
 - The duplicate submission becomes versions of one project (a database trigger keeps submitted versions immutable).

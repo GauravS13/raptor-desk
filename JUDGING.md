@@ -209,6 +209,24 @@ again as reviews arrive, and whatever is still close goes to deliberation.
      - every written comment and "one thing to improve", unattributed and in a fixed shuffled order
    - A team can query a factual error. Organizers answer, and both steps are audited. The signed result itself never changes.
 
+### Tamper evidence and signed records
+
+- **Score ledger.** Every submitted, amended or imported review appends a ledger entry:
+  - the scores, and a SHA-256 of the written feedback
+  - a hash chained to the previous entry
+  - an Ed25519 signature with the deployment key
+
+  The table is append-only. Verification recomputes every hash and signature, then checks that the live scores and feedback still match the latest entry for each review. A direct database edit is therefore found and located by sequence number. `manage.py demo_tamper` shows this.
+- **Judge protocols.** When judging closes, every judge gets a signed, numbered protocol of every score they gave, each tied to its ledger entry. It is private to that judge and the organizers.
+- **Certificates and participation records.** When results are published, judges get certificates and team members get participation records.
+  - They are signed and contain no scores or places.
+  - They are public only to whoever holds their random code.
+  - A judge can opt in to a public passport that lists their certificates across events.
+- **Checking.**
+  - Anything signed can be checked at `/verify`, or offline with `python3 tools/verify.py file.json --portal <url>`.
+  - The tool uses only the standard library, with an RFC 8032 Ed25519 implementation.
+  - A document re-signed with any key other than the portal's is rejected.
+
 ---
 
 ## 7. Results on the official fixtures

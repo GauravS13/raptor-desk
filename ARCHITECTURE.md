@@ -41,7 +41,8 @@ and it gives one place to enforce access rules.
 | `core` | Shared infrastructure; never imports the apps | import-linter contract in CI |
 | apps | Pages and API call the same services | UI/API parity test (`core/actions.py`) |
 | API | Bearer tokens only (ninja views are CSRF-exempt) | Middleware + test |
-| Data | Audit log, phase history and submitted versions cannot be rewritten | Database triggers (SQLite and PostgreSQL) |
+| Data | Audit log, phase history, submitted versions, deliberation decisions, results snapshots, publications, the score ledger and signed documents cannot be rewritten | Database triggers (SQLite and PostgreSQL), checked by `manage.py doctor` |
+| Records | Everything published or issued is signed canonical JSON, checkable offline | `core/signing.py`, `tools/verify.py` |
 
 ## Apps
 
@@ -51,7 +52,7 @@ and it gives one place to enforce access rules.
 | `events` | Events, tracks, prizes, rubric criteria, custom questions, required artifacts, lifecycle and preflight, templates, organizer console, audit page |
 | `teams` | Teams, members (one team per person per event), invite links |
 | `submissions` | Projects and immutable versions, answers, artifacts, public gallery and event pages |
-| `judging` | Judge tracks, assignments, reviews and scores, conflicts, progress, results, CSV exports, judge console |
+| `judging` | Judge tracks, assignments, reviews and scores, conflicts, progress, results, close-call loop, deliberation, signed snapshots and publishing, feedback reports and queries, score ledger, protocols, certificates, passport, CSV exports, judge console |
 | `seed` | The fixture loader, the data hygiene report, demo accounts and the live DOGFOOD event |
 | `ops` | Backup and verified restore, the `doctor` health report, admin-only Prometheus metrics |
 

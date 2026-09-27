@@ -15,7 +15,7 @@ triggers), not only in code.
 | `accounts_apitoken` | user, token_hash, label, is_seed, revoked_at | only a SHA-256 hash is stored; unique |
 | `accounts_magiclink` | user, token_hash, expires_at, used_at | single use, 15 minutes |
 | `accounts_rolegrant` | user, event, role (participant/judge/organizer) | unique (user, event, role). Roles never cross events |
-| `accounts_judgeprofile` | skill_tags, coi_emails, coi_domains | domain conflicts are opt-in |
+| `accounts_judgeprofile` | skill_tags, coi_emails, coi_domains, public_passport | domain conflicts and the public passport are opt-in |
 
 ### Events
 | Table | Key columns | Invariants |
@@ -46,6 +46,12 @@ triggers), not only in code.
 | `judging_review` | assignment, **version**, comment, improvement, status, active_seconds | **unique (assignment, version)**: a judge may review a resubmission, and each version once |
 | `judging_scoreitem` | review, criterion, value | one score per criterion per review; range checked against the criterion |
 | `judging_conflict` | event, judge, team, reason | unique |
+| `judging_rankingdecision` | event, kind (confirm / place_above), project, other, rationale, actor | **append-only**; a rationale is required; `other` only for place_above |
+| `judging_resultssnapshot` | event, number, method, input_hash, payload, payload_hash, signature, key_id | **append-only**; numbered per event; signed canonical JSON |
+| `judging_publication` | event (one), snapshot, published_by, published_at | **append-only**; which signed snapshot was published |
+| `judging_resultquery` | event, project, author, message, status, response | every change audited; at most 3 open per project |
+| `judging_scoreevent` | event, seq, review_id, payload, payload_hash, prev_hash, entry_hash, signature | **append-only**; unique (event, seq); hash-chained and signed |
+| `judging_credential` | kind (protocol / certificate / participation), number, code, event, user, payload, signature | **append-only**; one per kind, event and person; public ones found only by random code |
 
 ### Core
 | Table | Purpose | Invariants |

@@ -104,7 +104,8 @@ All seven official checks pass. They were run with the unmodified `tools/run.py`
 - **Started, not claimed:**
   - an audit trail page (T3)
   - a REST API with OpenAPI covering every console action, with parity enforced by a test (T4)
-  - Voting, comments, webhooks, certificates, signed records, the embed widget and import are not built yet.
+  - signed records and certificates with public verification (T4)
+  - Voting, comments, webhooks, the embed widget and import are not built yet.
 
 ---
 
@@ -123,6 +124,11 @@ All seven official checks pass. They were run with the unmodified `tools/run.py`
   - The public results carry a method card.
   - Every team gets a feedback report with all the written feedback, unattributed, and can query a factual error.
 - **Judging you can defend.** An additive judge-bias model, a shrunken z-score and the raw mean, side by side, plus bootstrap intervals, P(top k) per prize cutoff, and flags for close calls, weak evidence and method disagreement. On the fixtures, the raw average's tie for first is resolved, and a project that ranked third only because it drew a lenient judge drops to seventh. A simulation with a known truth shows the correction beats averaging in 96% of runs.
+- **Every score is on a signed ledger.**
+  - Scores are hash-chained and signed, and checked against the live database.
+  - A score edited directly in the database is caught and located.
+  - Judges get signed protocols, certificates and an opt-in public passport. Team members get participation records.
+  - Everything can be checked at `/verify`, or offline with a standard-library `tools/verify.py`.
 - **Isolation is proven, not promised.** Default-deny policies on every route; the portal refuses to boot if one is missing. The API accepts bearer tokens only and never redirects. The access matrix is generated from real responses.
 - **The traps are named.** The flat-lining judge, single-review judges, the resubmission (one project, two versions), missing feedback and shared team names are all detected at boot and handled in the data model.
 - **An honest, append-only audit trail.** Database triggers reject edits to the audit log, the phase history and submitted versions.
@@ -156,7 +162,7 @@ uv run python tools/simulate_proof.py   # regenerate every number in JUDGING.md
 ## Known limitations
 
 - T3 (voting, comments) and most of T4 are not built yet. See the table above.
-- Signed judge protocols, certificates and the hash-chained score ledger are planned next.
+- The judge console's pairwise mode, recusal button and autosave are planned next, then public voting.
 - Judges' review time is measured in the browser while the page is visible, so it is an estimate.
 - The leniency model corrects each judge's level, not their scale. JUDGING.md §10 lists the model's assumptions.
 
