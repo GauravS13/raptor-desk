@@ -75,3 +75,36 @@ added when the decision is made, next to the commit that implements it.
 - **Decided:** import-linter contracts: `scoring_engine` may not import Django or app code; `core` may not import the apps.
 - **Why:** the scoring maths stays a pure, independently testable library, and shared infrastructure stays free of business logic.
 - **Where:** `pyproject.toml` · 7a8db56
+
+## D-013 · A resubmission is a new version of the same project
+- **Decided:** editing a submitted project before the deadline creates version n+1; submitted versions are immutable (database trigger); reviews reference the version judged.
+- **Rejected:** allowing a second project per team; overwriting the submitted content.
+- **Why:** the fixture's "Dry Harbour" was submitted twice by the same team, three minutes before the close. As two projects it ranks #9 and #31 and could take two prizes; as versions it is one entry, and what a judge saw is never rewritten.
+- **Where:** `src/apps/submissions/`, `src/apps/seed/fixtures.py` · abb1729, a90d27b
+
+## D-014 · A flat-liner is recognised by identical per-criterion scores
+- **Decided:** a judge is excluded from the bias fit only if every review carries the same per-criterion scores; equal composites alone are not enough.
+- **Rejected:** zero variance of the composite.
+- **Why:** after the resubmission merge, jdg_19's three composites are equal (5+4+2 and 4+3+4 both total 11). Those are genuine judgements that happen to tie, not rubber-stamping; only jdg_07 (4/4/4 everywhere) is.
+- **Where:** `src/scoring_engine/normalization.py` · 9b85e16
+
+## D-015 · Additive judge-severity model as the default estimator
+- **Decided:** rank by a ridge-regularised additive model; show the shrunken z-score and the raw mean beside it; flag disagreement and close calls from a bootstrap.
+- **Rejected:** the per-judge z-score (NaN for 7 fixture projects); raw averages (rewards lenient judges).
+- **Why:** it never divides by a judge's spread, handles judges with one review through the ridge term, recovers a known truth best in simulation (Spearman 0.813 vs 0.697), and its uncertainty tells the organizer where a human decision is needed.
+- **Where:** `src/scoring_engine/normalization.py`, `JUDGING.md` · 9b85e16, 2a01e31
+
+## D-016 · Queue order is random per judge, and stored
+- **Decided:** each assignment gets a random queue position when created.
+- **Why:** judges drift over a session (fatigue, calibration); a shared order would give the same projects the same advantage for every judge.
+- **Where:** `src/apps/judging/services.py` · dc97265
+
+## D-017 · Demo data only in the demo profile
+- **Decided:** fixed checker tokens, demo passwords and fixture data are created only when `RD_PROFILE=demo` (the compose default); `production` refuses them.
+- **Why:** the acceptance checker needs fixed tokens, but a real deployment must never have them.
+- **Where:** `src/apps/seed/demo.py` · a90d27b
+
+## D-018 · Isolation proven by a generated matrix
+- **Decided:** a test requests every sensitive resource as eight identities and compares with expected statuses; the markdown table is generated from those responses; the same test crawls every GET route as every role looking for server errors or API redirects.
+- **Why:** "judges cannot see each other's scores" should be shown, not asserted.
+- **Where:** `tests/test_access_matrix.py`, `ACCESS-MATRIX.md` · 39d5c6e
