@@ -1,0 +1,20 @@
+{
+  "key": "mindcode-2026",
+  "name": "MINDCODE 2026",
+  "description": "Five weighted criteria with bonuses for open source, a deployed demo and documentation.",
+  "source": "https://mindcode-hackathon.pages.dev/",
+  "weighting": "percent",
+  "criteria": [
+    {"key": "impact_vision", "label": "Impact & Vision", "weight": 35, "min": 1, "max": 5},
+    {"key": "execution", "label": "Execution", "weight": 25, "min": 1, "max": 5},
+    {"key": "innovation", "label": "Innovation", "weight": 20, "min": 1, "max": 5},
+    {"key": "user_experience", "label": "User Experience", "weight": 15, "min": 1, "max": 5},
+    {"key": "presentation", "label": "Presentation", "weight": 5, "min": 1, "max": 5}
+  ],
+  "bonus_criteria": [
+    {"key": "open_source", "label": "Open source (tie-break)", "weight": 1, "min": 0, "max": 1},
+    {"key": "deployed_demo", "label": "Deployed demo (tie-break)", "weight": 1, "min": 0, "max": 1},
+    {"key": "documentation", "label": "Documentation (tie-break)", "weight": 1, "min": 0, "max": 1}
+  ],
+  "settings": {"reviews_per_project": 3}
+}

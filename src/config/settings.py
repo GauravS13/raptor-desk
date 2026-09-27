@@ -83,6 +83,9 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "/login"
 
+# Ready-made event formats (rubrics, prizes, settings).
+EVENT_TEMPLATES_DIR = Path(env("RD_EVENT_TEMPLATES_DIR", str(REPO_DIR / "data" / "templates")))
+
 # Public address of this portal, used in emailed links.
 BASE_URL = env("RD_BASE_URL", "http://localhost:8080").rstrip("/")
 

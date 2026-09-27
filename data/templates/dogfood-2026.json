@@ -1,0 +1,86 @@
+{
+  "key": "dogfood-2026",
+  "name": "DOGFOOD 2026",
+  "description": "Build the platform that will judge you. One product, four tiers, a T1 gate, weighted criteria on a 0 to 5 scale, bonuses that only break ties.",
+  "source": "https://dogfoodhack.com (REV 2.6)",
+  "weighting": "percent",
+  "criteria": [
+    {
+      "key": "t1_cleared",
+      "label": "T1 cleared (gate)",
+      "description": "Clear T1 or you are not judged: auth, roles, events, teams, submissions with drafts, deadline enforcement, public gallery.",
+      "weight": 0, "min": 0, "max": 1, "gate": true, "gate_threshold": 1,
+      "anchors": {"0": "T1 not cleared: the project is not scored.", "1": "T1 cleared."}
+    },
+    {
+      "key": "tier_completion",
+      "label": "Tier Completion & Correctness",
+      "description": "How far up the ladder, verified by the acceptance report rather than the README. Correctness beats breadth. Honest gap reporting is rewarded; inflated claims are penalised.",
+      "weight": 40, "min": 0, "max": 5,
+      "anchors": {
+        "1": "T1 only, with failures or claims the report does not verify.",
+        "3": "T2 verified cleanly, or higher tiers with notable gaps honestly reported.",
+        "5": "Every claimed tier verified and correct; gaps reported in the team's own words."
+      }
+    },
+    {
+      "key": "judging_integrity",
+      "label": "Judging Integrity",
+      "description": "Role isolation enforced in the backend, a documented and defensible normalization method, an audit trail an organizer can read, abuse considered up front.",
+      "weight": 25, "min": 0, "max": 5,
+      "anchors": {
+        "1": "Checks live in the UI or scores are simply averaged.",
+        "3": "Backend isolation and a documented normalization; limited audit.",
+        "5": "Isolation proven, normalization defended with evidence, readable audit trail, abuse modelled."
+      }
+    },
+    {
+      "key": "adoptability",
+      "label": "Adoptability & Operability",
+      "description": "Could this run in production on Monday: one command, seeded with real data, docs a stranger can follow, a migration path in and out, a clean license.",
+      "weight": 20, "min": 0, "max": 5,
+      "anchors": {
+        "1": "Hard to start or depends on hosted services.",
+        "3": "One command works; documentation has gaps.",
+        "5": "Runs offline in one command, clear docs, data can move in and out."
+      }
+    },
+    {
+      "key": "code_quality",
+      "label": "Code Quality & Innovation",
+      "description": "Idiomatic by the standard of a senior reviewer in that stack, a schema worth defending, design decisions worth stealing.",
+      "weight": 15, "min": 0, "max": 5,
+      "anchors": {
+        "1": "Hard to follow; schema not defended.",
+        "3": "Idiomatic and tested.",
+        "5": "A schema a database person would defend and at least one decision worth stealing."
+      }
+    }
+  ],
+  "bonus_criteria": [
+    {"key": "normalization_proof", "label": "Normalization Proof (+5, tie-break only)", "weight": 5, "min": 0, "max": 1},
+    {"key": "pairwise_mode", "label": "Pairwise Mode (+5, tie-break only)", "weight": 5, "min": 0, "max": 1},
+    {"key": "threat_model", "label": "Threat Model (+3, tie-break only)", "weight": 3, "min": 0, "max": 1},
+    {"key": "api_first", "label": "API First (+3, tie-break only)", "weight": 3, "min": 0, "max": 1}
+  ],
+  "prizes": [
+    {"name": "Grand Prize: the portal that gets forked and run", "rank": 1, "amount": "$800"},
+    {"name": "Runner-Up", "rank": 2, "amount": "$500"},
+    {"name": "Third Place", "rank": 3, "amount": "$350"},
+    {"name": "Fourth Place", "rank": 4, "amount": "$200"},
+    {"name": "Fifth Place", "rank": 5, "amount": "$150"},
+    {"name": "Best Judging Engine", "rank": 6, "amount": "$100"},
+    {"name": "Write-Up Quest (4 x $100)", "rank": 7, "amount": "$400"}
+  ],
+  "required_artifacts": [
+    {"key": "dogfood_toml", "label": ".dogfood.toml", "kind": "file", "required": true},
+    {"key": "acceptance_report", "label": "acceptance-report.txt", "kind": "file", "required": true, "parser": "dogfood_acceptance_report"},
+    {"key": "demo_video", "label": "Five-minute demo video", "kind": "url", "required": true},
+    {"key": "license", "label": "OSI-approved license", "kind": "text", "required": true}
+  ],
+  "settings": {
+    "reviews_per_project": 3,
+    "max_team_size": 4,
+    "voting_mode": "off"
+  }
+}

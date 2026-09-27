@@ -1,0 +1,15 @@
+{
+  "key": "code-resurrection-2025",
+  "name": "Code Resurrection",
+  "description": "Five criteria weighted by multipliers rather than percentages.",
+  "source": "https://www.raptors.dev/blog/behind-the-scenes-code-resurrection-hackathon-2025",
+  "weighting": "multiplier",
+  "criteria": [
+    {"key": "technical_implementation", "label": "Technical Implementation", "weight": 1.4, "min": 1, "max": 5},
+    {"key": "innovation_vision", "label": "Innovation & Vision", "weight": 1.3, "min": 1, "max": 5},
+    {"key": "archaeological_excellence", "label": "Archaeological Excellence", "weight": 1.2, "min": 1, "max": 5},
+    {"key": "user_experience", "label": "User Experience", "weight": 1.1, "min": 1, "max": 5},
+    {"key": "documentation_quality", "label": "Documentation Quality", "weight": 1.0, "min": 1, "max": 5}
+  ],
+  "settings": {"reviews_per_project": 3}
+}

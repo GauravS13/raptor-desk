@@ -1,0 +1,23 @@
+{
+  "key": "zero-dependency-2026",
+  "name": "Zero Dependency 2026",
+  "description": "Build real software with no third-party packages, and prove it.",
+  "source": "https://dev.to/raptorsdev/zero-dependency-2026-build-real-software-with-no-packages-prove-it-hnc",
+  "weighting": "percent",
+  "criteria": [
+    {"key": "functionality", "label": "Functionality & Usefulness", "weight": 35, "min": 1, "max": 5,
+     "description": "Does it build with one command, run, and do something a real person would want?"},
+    {"key": "zero_dependency_craft", "label": "Zero-Dependency Craft", "weight": 30, "min": 1, "max": 5,
+     "description": "How well the standard library replaced the usual imports."},
+    {"key": "code_quality", "label": "Code Quality & Idiom", "weight": 25, "min": 1, "max": 5,
+     "description": "Does the code read naturally to an experienced reviewer?"},
+    {"key": "innovation", "label": "Innovation", "weight": 10, "min": 1, "max": 5}
+  ],
+  "required_artifacts": [
+    {"key": "dependency_manifest", "label": "Empty dependency manifest", "kind": "file", "required": true},
+    {"key": "dependency_proof", "label": "Dependency proof (command output or CI log)", "kind": "file", "required": true},
+    {"key": "stdlib_md", "label": "STDLIB.md", "kind": "file", "required": true},
+    {"key": "demo_video", "label": "Five-minute demo video", "kind": "url", "required": true}
+  ],
+  "settings": {"reviews_per_project": 3}
+}

@@ -1,0 +1,13 @@
+{
+  "key": "fixture-default",
+  "name": "Official DOGFOOD fixture rubric",
+  "description": "The three criteria found in the official fixture scores, weighted equally.",
+  "source": "data/fixtures.json",
+  "weighting": "multiplier",
+  "criteria": [
+    {"key": "functionality", "label": "Functionality", "weight": 1, "min": 1, "max": 5},
+    {"key": "quality", "label": "Quality", "weight": 1, "min": 1, "max": 5},
+    {"key": "innovation", "label": "Innovation", "weight": 1, "min": 1, "max": 5}
+  ],
+  "settings": {"reviews_per_project": 3}
+}
