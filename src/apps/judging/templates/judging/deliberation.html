@@ -84,6 +84,39 @@
   <p class="muted">Decisions can be recorded while the event is in judging or deliberation.</p>
 {% endif %}
 
+<section aria-labelledby="freeze">
+  <h2 id="freeze">Freeze and sign</h2>
+  <p>Freezing stores the final order above, with every decision, the method, its parameters and a hash of every review
+    score, as one document signed with this deployment's key. Snapshots can never be changed; publishing uses the
+    latest one, and needs it to be current.</p>
+  {% if snapshots %}
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">Snapshot</th><th scope="col">Frozen</th><th scope="col">SHA-256</th><th scope="col">Decisions</th><th scope="col">Signed document</th></tr></thead>
+      <tbody>
+      {% for snap in snapshots %}
+        <tr>
+          <td>#{{ snap.number }}{% if forloop.first %} {% if latest_is_current %}<span class="tag">current</span>{% else %}<span class="tag">out of date: reviews or decisions changed since</span>{% endif %}{% endif %}</td>
+          <td>{{ snap.created_at|date:"Y-m-d H:i" }} UTC</td>
+          <td><code>{{ snap.payload_hash|slice:":16" }}…</code></td>
+          <td>{{ snap.payload.decisions|length }}</td>
+          <td><a href="/o/events/{{ event.id }}/results/snapshots/{{ snap.number }}.json">download JSON</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  {% endif %}
+  {% if can_freeze %}
+    <form method="post" action="/o/events/{{ event.id }}/results/freeze">
+      {% csrf_token %}
+      <button type="submit" class="secondary">Freeze and sign the current order</button>
+    </form>
+  {% else %}
+    <p class="muted">Results can be frozen once the event is in deliberation (judging closed).</p>
+  {% endif %}
+</section>
+
 <section aria-labelledby="log">
   <h2 id="log">Decision log</h2>
   {% if board.decisions %}

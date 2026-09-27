@@ -32,6 +32,12 @@ urlpatterns = [
         views.organizer_decide,
         name="org-decide",
     ),
+    path("o/events/<str:event_id>/results/freeze", views.organizer_freeze, name="org-freeze"),
+    path(
+        "o/events/<str:event_id>/results/snapshots/<int:number>.json",
+        views.organizer_snapshot,
+        name="org-snapshot",
+    ),
     path("o/events/<str:event_id>/exports", views.organizer_exports, name="org-exports"),
     path(
         "o/events/<str:event_id>/exports/<str:kind>.csv",

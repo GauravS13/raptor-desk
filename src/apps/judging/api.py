@@ -8,7 +8,7 @@ from ninja import Field, Router, Schema, Status
 
 from apps.events import policies as event_policies
 from apps.events.services import get_event
-from apps.judging import close_calls, deliberation, exports, repositories, services
+from apps.judging import close_calls, deliberation, exports, repositories, services, snapshots
 from apps.judging import results as results_service
 from apps.judging.models import Review
 from core.actions import api_action
@@ -589,3 +589,52 @@ def add_decision(request: HttpRequest, event_id: str, payload: DecisionIn) -> St
         rationale=payload.rationale,
     )
     return Status(201, decision_out(decision))
+
+
+# --- Signed results snapshots --------------------------------------------------------
+
+
+class SnapshotOut(Schema):
+    number: int
+    created_at: datetime
+    method: str
+    payload_hash: str
+    input_hash: str
+    key_id: str
+    decisions: int
+
+
+def snapshot_out(item: Any) -> SnapshotOut:
+    return SnapshotOut(
+        number=item.number,
+        created_at=item.created_at,
+        method=item.method,
+        payload_hash=item.payload_hash,
+        input_hash=item.input_hash,
+        key_id=item.key_id,
+        decisions=len(item.payload.get("decisions", [])),
+    )
+
+
+@router.get("/events/{event_id}/results/snapshots", response=list[SnapshotOut])
+@policy(event_policies.EVENTS_MANAGE)
+def list_snapshots(request: HttpRequest, event_id: str) -> list[SnapshotOut]:
+    return [snapshot_out(s) for s in get_event(event_id).results_snapshots.order_by("number")]
+
+
+@router.post("/events/{event_id}/results/snapshots", response={201: SnapshotOut})
+@api_action("judging.freeze_results")
+@policy(event_policies.EVENTS_MANAGE)
+def freeze_results(request: HttpRequest, event_id: str) -> Status[SnapshotOut]:
+    """Freeze the current final order into a signed, immutable snapshot."""
+    return Status(201, snapshot_out(snapshots.freeze(get_principal(request), get_event(event_id))))
+
+
+@router.get("/events/{event_id}/results/snapshots/{number}")
+@policy(event_policies.EVENTS_MANAGE)
+def get_snapshot(request: HttpRequest, event_id: str, number: int) -> dict[str, Any]:
+    """The signed document: payload, its SHA-256 and the Ed25519 signature."""
+    item = get_event(event_id).results_snapshots.filter(number=number).first()
+    if item is None:
+        raise not_found("No such snapshot.")
+    return snapshots.signed_document(item)

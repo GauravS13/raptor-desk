@@ -28,6 +28,7 @@ class EventResults:
     teams: dict[str, str]
     gated_out: list[str]
     bonus: dict[str, float]
+    observations: list[Observation]
 
     @property
     def method(self) -> str:
@@ -85,7 +86,7 @@ def compute(
     projects = Project.objects.filter(event=event).select_related("canonical_version", "team")
     names = {p.pk: p.canonical_version.name if p.canonical_version else p.pk for p in projects}
     teams = {p.pk: p.team.name for p in projects}
-    return EventResults(event, evaluation, names, teams, sorted(gated_out), bonus)
+    return EventResults(event, evaluation, names, teams, sorted(gated_out), bonus, observations)
 
 
 def as_rows(results: EventResults) -> list[dict[str, object]]:

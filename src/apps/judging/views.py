@@ -4,14 +4,14 @@ from typing import Any
 
 from django import forms
 from django.contrib import messages
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from apps.accounts.models import User
 from apps.events import policies as event_policies
 from apps.events.services import get_event
-from apps.judging import close_calls, deliberation, exports, services
+from apps.judging import close_calls, deliberation, exports, services, snapshots
 from apps.judging import results as results_service
 from apps.judging.api import JUDGE_SELF
 from apps.judging.models import Assignment
@@ -328,6 +328,9 @@ def organizer_deliberation(request: HttpRequest, event_id: str) -> HttpResponse:
         },
         "has_bonus": event.criteria.filter(is_bonus=True).exists(),
         "can_decide": event.phase in deliberation.OPEN_PHASES,
+        "can_freeze": event.phase in snapshots.FREEZE_PHASES,
+        "snapshots": list(event.results_snapshots.order_by("-number")),
+        "latest_is_current": _latest_is_current(event),
     }
     return render(request, "judging/deliberation.html", context)
 
@@ -352,3 +355,33 @@ def organizer_decide(request: HttpRequest, event_id: str) -> HttpResponse:
     else:
         messages.success(request, "Decision recorded in the deliberation log and the audit trail.")
     return HttpResponseRedirect(f"/o/events/{event_id}/deliberation")
+
+
+def _latest_is_current(event: Any) -> bool | None:
+    latest = snapshots.latest(event)
+    return None if latest is None else snapshots.is_current(event, latest)
+
+
+@require_POST
+@ui_action("judging.freeze_results")
+@policy(event_policies.EVENTS_MANAGE)
+def organizer_freeze(request: HttpRequest, event_id: str) -> HttpResponse:
+    snapshot = snapshots.freeze(get_principal(request), get_event(event_id))
+    messages.success(
+        request,
+        f"Results frozen as snapshot #{snapshot.number} and signed "
+        f"(SHA-256 {snapshot.payload_hash[:12]}).",
+    )
+    return HttpResponseRedirect(f"/o/events/{event_id}/deliberation")
+
+
+@require_GET
+@policy(event_policies.EVENTS_MANAGE)
+def organizer_snapshot(request: HttpRequest, event_id: str, number: int) -> HttpResponse:
+    item = get_event(event_id).results_snapshots.filter(number=number).first()
+    if item is None:
+        raise not_found("No such snapshot.")
+    response = JsonResponse(snapshots.signed_document(item), json_dumps_params={"indent": 2})
+    filename = f"{event_id}-results-{number}.json"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response

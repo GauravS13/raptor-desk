@@ -31,6 +31,10 @@ def _decision_id() -> str:
     return new_id("dec")
 
 
+def _snapshot_id() -> str:
+    return new_id("snp")
+
+
 class JudgeTrack(models.Model):
     """Which tracks a judge covers in an event. A judge never sees another track's projects."""
 
@@ -225,3 +229,37 @@ class RankingDecision(models.Model):
         if self.kind == DecisionKind.PLACE_ABOVE:
             return f"{self.project_id} above {self.other_id}"
         return f"{self.project_id} confirmed"
+
+
+class ResultsSnapshot(models.Model):
+    """Results frozen at a moment, signed by the deployment key. Append-only.
+
+    ``payload`` is the exact document that was signed: the final ranking with
+    its uncertainty, the deliberation decisions applied, the method and its
+    parameters, and ``input_hash`` over every review score that went in. Anyone
+    holding the public key can check that a published result was not altered.
+    """
+
+    id = models.CharField(primary_key=True, max_length=40, default=_snapshot_id, editable=False)
+    event = models.ForeignKey(
+        "events.Event", on_delete=models.CASCADE, related_name="results_snapshots"
+    )
+    number = models.PositiveIntegerField()
+    method = models.CharField(max_length=20)
+    input_hash = models.CharField(max_length=64)
+    payload = models.JSONField()
+    payload_hash = models.CharField(max_length=64)
+    signature = models.CharField(max_length=128)
+    key_id = models.CharField(max_length=16)
+    public_key = models.CharField(max_length=64)
+    created_by_id = models.CharField(max_length=40, blank=True)
+    created_at = models.DateTimeField(default=clock.now)
+
+    class Meta:
+        ordering: ClassVar[list[str]] = ["event_id", "number"]
+        constraints: ClassVar[list[models.BaseConstraint]] = [
+            models.UniqueConstraint(fields=["event", "number"], name="snapshot_number_per_event")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.event_id} results #{self.number}"
