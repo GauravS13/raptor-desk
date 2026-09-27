@@ -69,6 +69,14 @@ The method, its formulas, the fixture numbers and a simulation proof are in [JUD
 
 To start again, run `docker compose down -v && docker compose up`.
 
+**Tamper evidence:** every submitted score is in a hash-chained, signed ledger. The Judging
+tab verifies it on every load. To see a direct database edit caught, run:
+```bash
+docker compose exec app python src/manage.py demo_tamper
+```
+It changes one score with a raw SQL `UPDATE`, shows verification failing at that exact entry,
+and puts the score back.
+
 **Audit trail:** the same event's **Audit** tab shows every change, filterable, with CSV download. Edits to it are rejected by the database.
 
 ## Adoptability & Operability (20%)
