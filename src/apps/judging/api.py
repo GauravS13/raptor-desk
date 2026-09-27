@@ -8,7 +8,7 @@ from ninja import Field, Router, Schema, Status
 
 from apps.events import policies as event_policies
 from apps.events.services import get_event
-from apps.judging import close_calls, exports, repositories, services
+from apps.judging import close_calls, deliberation, exports, repositories, services
 from apps.judging import results as results_service
 from apps.judging.models import Review
 from core.actions import api_action
@@ -504,3 +504,88 @@ def ask_close_calls(
         get_principal(request), get_event(event_id), budget=payload.budget, pairs=pairs
     )
     return Status(201, [assignment_out(item) for item in created])
+
+
+# --- Deliberation ----------------------------------------------------------------
+
+
+class BoardRowOut(Schema):
+    final_rank: int
+    computed_rank: int
+    project_id: str
+    name: str
+    team: str
+    score: float
+    bonus: float
+    ci_low: float
+    ci_high: float
+    p_top: dict[int, float]
+    flags: list[str]
+    notes: list[str]
+    decided: bool
+
+
+class DecisionOut(Schema):
+    id: str
+    kind: str
+    project_id: str
+    other_id: str | None
+    rationale: str
+    actor_id: str
+    created_at: datetime
+
+
+class BoardOut(Schema):
+    event_id: str
+    prize_places: int
+    rows: list[BoardRowOut]
+    undecided: list[str]
+    decisions: list[DecisionOut]
+
+
+class DecisionIn(Schema):
+    kind: str = Field(..., description="confirm or place_above")
+    project_id: str
+    other_id: str | None = None
+    rationale: str
+
+
+def decision_out(item: Any) -> DecisionOut:
+    return DecisionOut(
+        id=item.pk,
+        kind=item.kind,
+        project_id=item.project_id,
+        other_id=item.other_id,
+        rationale=item.rationale,
+        actor_id=item.actor_id,
+        created_at=item.created_at,
+    )
+
+
+@router.get("/events/{event_id}/deliberation", response=BoardOut)
+@policy(event_policies.EVENTS_MANAGE)
+def deliberation_board(request: HttpRequest, event_id: str) -> BoardOut:
+    """The computed ranking with decisions applied, open close calls and the decision log."""
+    found = deliberation.board(get_event(event_id))
+    return BoardOut(
+        event_id=event_id,
+        prize_places=found.prize_places,
+        rows=[BoardRowOut(**{**row.__dict__}) for row in found.rows],
+        undecided=[row.project_id for row in found.undecided],
+        decisions=[decision_out(d) for d in found.decisions],
+    )
+
+
+@router.post("/events/{event_id}/deliberation/decisions", response={201: DecisionOut})
+@api_action("judging.record_decision")
+@policy(event_policies.EVENTS_MANAGE)
+def add_decision(request: HttpRequest, event_id: str, payload: DecisionIn) -> Status[DecisionOut]:
+    decision = deliberation.record_decision(
+        get_principal(request),
+        get_event(event_id),
+        kind=payload.kind,
+        project_id=payload.project_id,
+        other_id=payload.other_id,
+        rationale=payload.rationale,
+    )
+    return Status(201, decision_out(decision))

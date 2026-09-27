@@ -22,6 +22,16 @@ urlpatterns = [
     ),
     path("o/events/<str:event_id>/results", views.organizer_results, name="org-results"),
     path("o/events/<str:event_id>/close-calls/ask", views.organizer_ask, name="org-ask"),
+    path(
+        "o/events/<str:event_id>/deliberation",
+        views.organizer_deliberation,
+        name="org-deliberation",
+    ),
+    path(
+        "o/events/<str:event_id>/deliberation/decisions",
+        views.organizer_decide,
+        name="org-decide",
+    ),
     path("o/events/<str:event_id>/exports", views.organizer_exports, name="org-exports"),
     path(
         "o/events/<str:event_id>/exports/<str:kind>.csv",

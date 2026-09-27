@@ -11,7 +11,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from apps.accounts.models import User
 from apps.events import policies as event_policies
 from apps.events.services import get_event
-from apps.judging import close_calls, exports, services
+from apps.judging import close_calls, deliberation, exports, services
 from apps.judging import results as results_service
 from apps.judging.api import JUDGE_SELF
 from apps.judging.models import Assignment
@@ -309,3 +309,46 @@ def organizer_ask(request: HttpRequest, event_id: str) -> HttpResponse:
     else:
         messages.info(request, "Nothing to ask: no close call has an eligible judge left.")
     return HttpResponseRedirect(f"/o/events/{event_id}/results?budget={budget}")
+
+
+@require_GET
+@policy(event_policies.EVENTS_MANAGE)
+def organizer_deliberation(request: HttpRequest, event_id: str) -> HttpResponse:
+    event = get_event(event_id)
+    found = deliberation.board(event)
+    context = {
+        "event": event,
+        "tab": "deliberation",
+        "board": found,
+        "cutoffs": found.results.evaluation.cutoffs,
+        "names": {row.project_id: row.name for row in found.rows},
+        "actors": {
+            user.pk: user.name or user.email
+            for user in User.objects.filter(pk__in={d.actor_id for d in found.decisions})
+        },
+        "has_bonus": event.criteria.filter(is_bonus=True).exists(),
+        "can_decide": event.phase in deliberation.OPEN_PHASES,
+    }
+    return render(request, "judging/deliberation.html", context)
+
+
+@require_POST
+@ui_action("judging.record_decision")
+@policy(event_policies.EVENTS_MANAGE)
+def organizer_decide(request: HttpRequest, event_id: str) -> HttpResponse:
+    try:
+        deliberation.record_decision(
+            get_principal(request),
+            get_event(event_id),
+            kind=request.POST.get("kind", ""),
+            project_id=request.POST.get("project_id", ""),
+            other_id=request.POST.get("other_id") or None,
+            rationale=request.POST.get("rationale", ""),
+        )
+    except ApiError as exc:
+        if exc.status == 409:
+            raise
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, "Decision recorded in the deliberation log and the audit trail.")
+    return HttpResponseRedirect(f"/o/events/{event_id}/deliberation")

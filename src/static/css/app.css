@@ -278,3 +278,8 @@ table.results td {
   white-space: nowrap;
 }
 
+/* Deliberation board: a line under the last prize place. */
+tr.prize-line td {
+  border-bottom: 3px solid var(--pico-primary);
+}
+

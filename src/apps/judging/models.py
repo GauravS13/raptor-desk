@@ -27,6 +27,10 @@ def _conflict_id() -> str:
     return new_id("coi")
 
 
+def _decision_id() -> str:
+    return new_id("dec")
+
+
 class JudgeTrack(models.Model):
     """Which tracks a judge covers in an event. A judge never sees another track's projects."""
 
@@ -175,3 +179,49 @@ class Conflict(models.Model):
 
     def __str__(self) -> str:
         return f"{self.judge} conflicts with {self.team}"
+
+
+class DecisionKind(models.TextChoices):
+    CONFIRM = "confirm", "Confirm the computed place"
+    PLACE_ABOVE = "place_above", "Place directly above another project"
+
+
+class RankingDecision(models.Model):
+    """A deliberation decision about the final order, with its reason. Append-only.
+
+    Decisions are applied in the order they were made. To change one, record a
+    new decision; the history of what was decided and why is never rewritten.
+    """
+
+    id = models.CharField(primary_key=True, max_length=40, default=_decision_id, editable=False)
+    event = models.ForeignKey(
+        "events.Event", on_delete=models.CASCADE, related_name="ranking_decisions"
+    )
+    kind = models.CharField(max_length=12, choices=DecisionKind.choices)
+    project = models.ForeignKey("submissions.Project", on_delete=models.CASCADE, related_name="+")
+    other = models.ForeignKey(
+        "submissions.Project", on_delete=models.CASCADE, null=True, blank=True, related_name="+"
+    )
+    rationale = models.TextField()
+    actor_id = models.CharField(max_length=40, blank=True)
+    created_at = models.DateTimeField(default=clock.now)
+
+    class Meta:
+        ordering: ClassVar[list[str]] = ["created_at", "id"]
+        constraints: ClassVar[list[models.BaseConstraint]] = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(kind="confirm", other__isnull=True)
+                    | models.Q(kind="place_above", other__isnull=False)
+                ),
+                name="decision_other_matches_kind",
+            ),
+            models.CheckConstraint(
+                condition=~models.Q(rationale=""), name="decision_needs_rationale"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        if self.kind == DecisionKind.PLACE_ABOVE:
+            return f"{self.project_id} above {self.other_id}"
+        return f"{self.project_id} confirmed"

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% load results_tags %}
+
+{% block title %}Deliberation · {{ event.name }}{% endblock %}
+
+{% block content %}
+{% include "events/_event_header.html" %}
+
+<p>The Fairness Engine proposes the order; people decide the prizes. Every decision needs a written reason and is kept
+  permanently, in the log below and in the audit trail. Exact ties on the corrected score are broken by bonus points
+  automatically, as the rules say.</p>
+
+{% if board.undecided %}
+  <p class="notice warning">{{ board.undecided|length }} close call{{ board.undecided|length|pluralize }} on the top {{ board.prize_places }}
+    still need{{ board.undecided|length|pluralize:"s," }} a decision:
+    {% for row in board.undecided %}{{ row.name }} ({{ row.project_id }}){% if not forloop.last %}, {% endif %}{% endfor %}.
+    Ask for more reviews on the <a href="/o/events/{{ event.id }}/results#doubt">Results</a> tab, or record a decision.</p>
+{% else %}
+  <p class="notice success">Every close call on the top {{ board.prize_places }} is settled or decided.</p>
+{% endif %}
+
+<div class="table-wrap">
+<table class="results">
+  <thead>
+    <tr>
+      <th scope="col">Final</th><th scope="col">Computed</th><th scope="col">Project</th><th scope="col">Corrected</th>
+      <th scope="col">90% interval</th>{% if has_bonus %}<th scope="col">Bonus</th>{% endif %}
+      {% for c in cutoffs %}<th scope="col">P(top {{ c }})</th>{% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+  {% for row in board.rows|slice:":15" %}
+    <tr{% if row.final_rank == board.prize_places %} class="prize-line"{% endif %}>
+      <td><strong>{{ row.final_rank }}</strong></td>
+      <td>{{ row.computed_rank }}</td>
+      <td>{{ row.name }} <small class="muted">{{ row.project_id }} · {{ row.team }}</small>
+        {% if row.flags or row.decided or row.notes %}<br>{% endif %}
+        {% for f in row.flags %}<span class="tag">{{ f|flag_label }}</span>{% endfor %}
+        {% if row.decided %}<span class="tag">decided</span>{% endif %}
+        {% for note in row.notes %}<br><small>{{ note }}</small>{% endfor %}
+      </td>
+      <td>{{ row.score|floatformat:3 }}</td>
+      <td>{{ row.ci_low|floatformat:2 }}–{{ row.ci_high|floatformat:2 }}</td>
+      {% if has_bonus %}<td>{{ row.bonus|floatformat:1 }}</td>{% endif %}
+      {% for c in cutoffs %}<td>{{ row.p_top|get_item:c|percent }}</td>{% endfor %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="muted">The first 15 places are shown; the line under place {{ board.prize_places }} marks the last prize place.</p>
+
+{% if can_decide %}
+<section aria-labelledby="decide">
+  <h2 id="decide">Record a decision</h2>
+  <form method="post" action="/o/events/{{ event.id }}/deliberation/decisions">
+    {% csrf_token %}
+    <div class="grid">
+      <label>Project
+        <select name="project_id" required>
+          {% for row in board.rows|slice:":15" %}<option value="{{ row.project_id }}">{{ row.final_rank }}. {{ row.name }} ({{ row.project_id }})</option>{% endfor %}
+        </select>
+      </label>
+      <label>Decision
+        <select name="kind" required>
+          <option value="confirm">Confirm at its computed place</option>
+          <option value="place_above">Place directly above…</option>
+        </select>
+      </label>
+      <label>…this project (for "place above")
+        <select name="other_id">
+          <option value="">(not needed to confirm)</option>
+          {% for row in board.rows|slice:":15" %}<option value="{{ row.project_id }}">{{ row.final_rank }}. {{ row.name }} ({{ row.project_id }})</option>{% endfor %}
+        </select>
+      </label>
+    </div>
+    <label for="rationale">Why (kept permanently)</label>
+    <textarea id="rationale" name="rationale" rows="3" minlength="10" required
+      placeholder="For example: the panel re-read both write-ups; prj_33 ships a working demo, prj_16 does not."></textarea>
+    <button type="submit">Record decision</button>
+  </form>
+</section>
+{% else %}
+  <p class="muted">Decisions can be recorded while the event is in judging or deliberation.</p>
+{% endif %}
+
+<section aria-labelledby="log">
+  <h2 id="log">Decision log</h2>
+  {% if board.decisions %}
+  <ol>
+    {% for d in board.decisions %}
+      <li>
+        <strong>{% if d.kind == "place_above" %}{{ names|get_item:d.project_id|default:d.project_id }} placed above {{ names|get_item:d.other_id|default:d.other_id }}{% else %}{{ names|get_item:d.project_id|default:d.project_id }} confirmed at its computed place{% endif %}</strong>
+        <small class="muted">{{ d.created_at|date:"Y-m-d H:i" }} UTC · {{ actors|get_item:d.actor_id|default:d.actor_id }}</small><br>
+        {{ d.rationale }}
+      </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+    <p class="muted">No decisions yet. The final order is the computed order.</p>
+  {% endif %}
+</section>
+{% endblock %}

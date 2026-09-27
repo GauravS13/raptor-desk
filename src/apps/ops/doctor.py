@@ -32,6 +32,8 @@ GUARD_TRIGGERS = {
     "events_phasetransition_no_update": "phase history",
     "events_phasetransition_no_delete": "phase history",
     "submissions_projectversion_frozen_after_submitted_at": "submitted versions",
+    "judging_rankingdecision_no_update": "deliberation decisions",
+    "judging_rankingdecision_no_delete": "deliberation decisions",
 }
 OUTBOX_OVERDUE = timedelta(minutes=5)
 BACKUP_MAX_AGE = timedelta(hours=24)
@@ -133,7 +135,7 @@ def tamper_guards() -> Finding:
             f"history can be rewritten: {', '.join(missing)} unprotected",
             "python src/manage.py migrate",
         )
-    return Finding("tamper guards", OK, "audit trail, phase history and submissions append-only")
+    return Finding("tamper guards", OK, "audit trail, phase history, submissions, decisions")
 
 
 def data_volume() -> Finding:
