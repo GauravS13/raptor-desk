@@ -16,6 +16,8 @@
     <a href="/events/{{ report.event.id }}/results">How the results were made</a>.</p>
 </article>
 
+{% if record %}<p>Your signed participation record: <a href="/verify/{{ record.code }}">{{ record.label }}</a>, to share on a CV or profile.</p>{% endif %}
+
 <section aria-labelledby="criteria">
   <h2 id="criteria">Scores by criterion</h2>
   <div class="table-wrap">

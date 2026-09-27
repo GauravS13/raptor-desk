@@ -40,6 +40,8 @@ GUARD_TRIGGERS = {
     "judging_publication_no_delete": "publications",
     "judging_scoreevent_no_update": "score ledger",
     "judging_scoreevent_no_delete": "score ledger",
+    "judging_credential_no_update": "signed documents",
+    "judging_credential_no_delete": "signed documents",
 }
 OUTBOX_OVERDUE = timedelta(minutes=5)
 BACKUP_MAX_AGE = timedelta(hours=24)

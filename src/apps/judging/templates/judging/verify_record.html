@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}{{ payload.number }} · {{ item.get_kind_display }}{% endblock %}
+
+{% block content %}
+{% if valid %}
+  <p class="notice success" role="status">Genuine: issued and signed by this Raptor Desk, and unchanged since.</p>
+{% else %}
+  <p class="notice error" role="alert">This record does not verify. Do not rely on it.</p>
+{% endif %}
+
+<article>
+  <header><strong>{{ item.get_kind_display }} {{ payload.number }}</strong></header>
+  {% if item.kind == "certificate" %}
+    <p><strong>{{ payload.person.name }}</strong> judged <strong>{{ payload.event.name }}</strong>,
+      reviewing {{ payload.projects_reviewed }} project{{ payload.projects_reviewed|pluralize }}.</p>
+  {% else %}
+    <p><strong>{{ payload.person.name }}</strong> took part in <strong>{{ payload.event.name }}</strong>
+      as a member of {{ payload.team }}, with the project
+      <a href="/projects/{{ payload.project.id }}">{{ payload.project.name }}</a>.</p>
+  {% endif %}
+  <p class="muted">Issued {{ item.issued_at|date:"Y-m-d" }}. Records never include scores.</p>
+</article>
+
+<article class="method-card">
+  <header><strong>Check it yourself</strong></header>
+  <p>The signed document is at <a href="/api/verify/{{ item.code }}">/api/verify/{{ item.code }}</a>. Its payload,
+    serialised as JSON with sorted keys, no spaces and UTF-8, hashes to <code>{{ item.payload_hash }}</code> and is signed with
+    the Ed25519 key <code>{{ item.key_id }}</code> published at <a href="/.well-known/raptor-desk-key">/.well-known/raptor-desk-key</a>.</p>
+</article>
+{% endblock %}

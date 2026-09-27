@@ -10,6 +10,7 @@ from apps.events import policies as event_policies
 from apps.events.services import get_event
 from apps.judging import (
     close_calls,
+    credentials,
     deliberation,
     exports,
     feedback,
@@ -800,3 +801,62 @@ def verify_ledger(request: HttpRequest, event_id: str) -> LedgerVerifyOut:
 def export_ledger(request: HttpRequest, event_id: str) -> dict[str, Any]:
     """Every ledger entry with its hashes and signature, for offline checking."""
     return ledger.export(get_event(event_id))
+
+
+# --- Signed paperwork -------------------------------------------------------------
+
+SIGNED_IN = define(
+    "judging.own_documents",
+    Rule(authenticated=True, description="Your own protocols, certificates and records."),
+)
+PUBLIC_VERIFY = define(
+    "public.verify",
+    Rule(public=True, description="Anyone holding a certificate or record code can check it."),
+)
+
+
+class CredentialOut(Schema):
+    number: str
+    kind: str
+    event_id: str
+    code: str
+    issued_at: datetime
+
+
+def credential_out(item: Any) -> CredentialOut:
+    return CredentialOut(
+        number=item.label,
+        kind=item.kind,
+        event_id=item.event_id,
+        code=item.code,
+        issued_at=item.issued_at,
+    )
+
+
+@router.get("/me/credentials", response=list[CredentialOut])
+@policy(SIGNED_IN)
+def my_credentials(request: HttpRequest) -> list[CredentialOut]:
+    principal = get_principal(request)
+    items = credentials.Credential.objects.filter(user_id=principal.user_id)
+    return [credential_out(item) for item in items.order_by("-issued_at")]
+
+
+@router.get("/protocols/{code}")
+@policy(SIGNED_IN)
+def get_protocol(request: HttpRequest, code: str) -> dict[str, Any]:
+    """A signed judge protocol: for that judge and the event's organizers only."""
+    return credentials.signed_document(credentials.protocol_for(get_principal(request), code))
+
+
+@router.get("/events/{event_id}/credentials", response=list[CredentialOut])
+@policy(event_policies.EVENTS_MANAGE)
+def event_credentials(request: HttpRequest, event_id: str) -> list[CredentialOut]:
+    return [credential_out(item) for item in get_event(event_id).credentials.all()]
+
+
+@router.get("/verify/{code}")
+@policy(PUBLIC_VERIFY)
+def verify_record(request: HttpRequest, code: str) -> dict[str, Any]:
+    """A public certificate or participation record, with whether its signature holds."""
+    document = credentials.signed_document(credentials.public_record(code))
+    return {**document, "valid": credentials.verify(document)}

@@ -7,4 +7,5 @@ class JudgingConfig(AppConfig):
     verbose_name = "Judge assignment, reviews and scores"
 
     def ready(self) -> None:
-        from apps.judging import publishing  # noqa: F401  (registers publish checks and hooks)
+        # Registering preflight checks and phase hooks.
+        from apps.judging import credentials, publishing  # noqa: F401

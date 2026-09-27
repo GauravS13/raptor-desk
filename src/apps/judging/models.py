@@ -43,6 +43,10 @@ def _score_event_id() -> str:
     return new_id("sce")
 
 
+def _credential_id() -> str:
+    return new_id("crd")
+
+
 class JudgeTrack(models.Model):
     """Which tracks a judge covers in an event. A judge never sees another track's projects."""
 
@@ -350,3 +354,55 @@ class ScoreEvent(models.Model):
 
     def __str__(self) -> str:
         return f"{self.event_id} ledger #{self.seq}"
+
+
+class CredentialKind(models.TextChoices):
+    PROTOCOL = "protocol", "Judge protocol"
+    CERTIFICATE = "certificate", "Judging certificate"
+    PARTICIPATION = "participation", "Participation record"
+
+
+class Credential(models.Model):
+    """A signed, numbered document issued to one person. Append-only.
+
+    - protocol: every score a judge gave in an event, tied to ledger entries.
+      Private to that judge and the event's organizers.
+    - certificate: "this person judged N projects at this event". Public by code.
+    - participation: "this person took part in this event with this project".
+      Public by code.
+
+    Certificates and records never contain scores. Public ones are found by an
+    unguessable ``code``, so people cannot be listed by walking the numbers.
+    """
+
+    id = models.CharField(primary_key=True, max_length=40, default=_credential_id, editable=False)
+    kind = models.CharField(max_length=15, choices=CredentialKind.choices)
+    number = models.PositiveIntegerField()
+    code = models.CharField(max_length=24, unique=True)
+    event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="credentials")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="credentials"
+    )
+    payload = models.JSONField()
+    payload_hash = models.CharField(max_length=64)
+    signature = models.CharField(max_length=128)
+    key_id = models.CharField(max_length=16)
+    public_key = models.CharField(max_length=64)
+    issued_at = models.DateTimeField(default=clock.now)
+
+    class Meta:
+        ordering: ClassVar[list[str]] = ["kind", "number"]
+        constraints: ClassVar[list[models.BaseConstraint]] = [
+            models.UniqueConstraint(fields=["kind", "number"], name="credential_number_per_kind"),
+            models.UniqueConstraint(
+                fields=["kind", "event", "user"], name="one_credential_per_kind_event_user"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.label} ({self.get_kind_display()})"
+
+    @property
+    def label(self) -> str:
+        prefix = {"protocol": "P", "certificate": "C", "participation": "R"}[self.kind]
+        return f"{prefix}-{self.number:06d}"

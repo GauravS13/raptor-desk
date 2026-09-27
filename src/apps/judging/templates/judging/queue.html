@@ -25,4 +25,19 @@
 {% empty %}
 <p>You have no projects to review yet.</p>
 {% endfor %}
+
+{% if documents %}
+<section aria-labelledby="documents">
+  <h2 id="documents">Your signed documents</h2>
+  <ul>
+    {% for d in documents %}
+      <li>
+        {% if d.kind == "protocol" %}<a href="/judge/protocols/{{ d.code }}">{% else %}<a href="/verify/{{ d.code }}">{% endif %}{{ d.get_kind_display }} {{ d.label }}</a>
+        <span class="muted">· {{ d.event.name }} · {{ d.issued_at|date:"Y-m-d" }}</span>
+        {% if d.kind == "protocol" %}<small class="muted">(private to you and the organizers)</small>{% else %}<small class="muted">(public to anyone you share the link with)</small>{% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
 {% endblock %}

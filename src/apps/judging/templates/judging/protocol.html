@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load results_tags %}
+
+{% block title %}Protocol {{ payload.number }} · {{ event.name }}{% endblock %}
+
+{% block content %}
+<hgroup>
+  <h1>Judging protocol {{ payload.number }}</h1>
+  <p>{{ payload.person.name }} · {{ event.name }} · issued {{ item.issued_at|date:"Y-m-d H:i" }} UTC</p>
+</hgroup>
+<p class="muted">Every score you gave in this event, as recorded in the score ledger when you submitted it. Only you and
+  the event's organizers can open this page. <a href="/judge/protocols/{{ item.code }}.json">Download the signed JSON</a>.</p>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th scope="col">Project</th><th scope="col">Scores</th><th scope="col">Submitted (UTC)</th><th scope="col">Ledger entry</th></tr></thead>
+  <tbody>
+  {% for row in payload.reviews %}
+    <tr>
+      <td>{{ names|get_item:row.project|default:row.project }} <small class="muted">{{ row.project }}</small></td>
+      <td>{% for key, value in row.scores.items %}{{ key }} {{ value }}{% if not forloop.last %} · {% endif %}{% endfor %}</td>
+      <td>{{ row.submitted_at|slice:":16"|cut:"T" }}</td>
+      <td>{% if row.ledger_seq %}#{{ row.ledger_seq }} <code>{{ row.ledger_entry_hash|slice:":12" }}…</code>{% else %}–{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<article class="method-card">
+  <header><strong>Signature</strong></header>
+  <p>SHA-256 <code>{{ item.payload_hash }}</code>, signed with Ed25519 key <code>{{ item.key_id }}</code>
+    (public key at <a href="/.well-known/raptor-desk-key">/.well-known/raptor-desk-key</a>).</p>
+</article>
+{% endblock %}

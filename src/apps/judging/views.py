@@ -13,6 +13,7 @@ from apps.events import policies as event_policies
 from apps.events.services import get_event
 from apps.judging import (
     close_calls,
+    credentials,
     deliberation,
     exports,
     feedback,
@@ -22,7 +23,7 @@ from apps.judging import (
     snapshots,
 )
 from apps.judging import results as results_service
-from apps.judging.api import FEEDBACK, JUDGE_SELF
+from apps.judging.api import FEEDBACK, JUDGE_SELF, PUBLIC_VERIFY, SIGNED_IN
 from apps.judging.models import Assignment
 from apps.submissions import services as submission_services
 from apps.submissions.models import Project
@@ -40,7 +41,9 @@ def judge_home(request: HttpRequest) -> HttpResponse:
         group = events.setdefault(item.event_id, {"event": item.event, "items": [], "done": 0})
         group["items"].append(item)
         group["done"] += item.status == "done"
-    return render(request, "judging/queue.html", {"groups": list(events.values())})
+    documents = credentials.Credential.objects.filter(user_id=get_principal(request).user_id)
+    context = {"groups": list(events.values()), "documents": documents.select_related("event")}
+    return render(request, "judging/queue.html", context)
 
 
 @require_http_methods(["GET", "POST"])
@@ -439,6 +442,9 @@ def feedback_page(request: HttpRequest, project_id: str) -> HttpResponse:
         "report": found,
         "event": found.event,
         "can_query": submission_services.is_member(principal, found.project),
+        "record": credentials.Credential.objects.filter(
+            kind="participation", event=found.event, user_id=principal.user_id
+        ).first(),
     }
     return render(request, "judging/feedback.html", context)
 
@@ -483,3 +489,37 @@ def organizer_answer(request: HttpRequest, event_id: str, query_id: str) -> Http
     else:
         messages.success(request, "Answer saved and emailed to the team.")
     return HttpResponseRedirect(f"/o/events/{event_id}/queries")
+
+
+@require_GET
+@policy(SIGNED_IN)
+def protocol_page(request: HttpRequest, code: str) -> HttpResponse:
+    item = credentials.protocol_for(get_principal(request), code)
+    names = dict(
+        Project.objects.filter(event=item.event).values_list("pk", "canonical_version__name")
+    )
+    context = {"item": item, "payload": item.payload, "names": names, "event": item.event}
+    return render(request, "judging/protocol.html", context)
+
+
+@require_GET
+@policy(SIGNED_IN)
+def protocol_json(request: HttpRequest, code: str) -> HttpResponse:
+    item = credentials.protocol_for(get_principal(request), code)
+    response = JsonResponse(credentials.signed_document(item), json_dumps_params={"indent": 2})
+    response["Content-Disposition"] = f'attachment; filename="protocol-{item.label}.json"'
+    return response
+
+
+@require_GET
+@policy(PUBLIC_VERIFY)
+def verify_page(request: HttpRequest, code: str) -> HttpResponse:
+    item = credentials.public_record(code)
+    document = credentials.signed_document(item)
+    context = {
+        "item": item,
+        "payload": item.payload,
+        "valid": credentials.verify(document),
+        "event": item.event,
+    }
+    return render(request, "judging/verify_record.html", context)
