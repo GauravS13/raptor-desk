@@ -94,6 +94,7 @@ EVENT_TEMPLATES_DIR = Path(env("RD_EVENT_TEMPLATES_DIR", str(REPO_DIR / "data" /
 BASE_URL = env("RD_BASE_URL", "http://localhost:8080").rstrip("/")
 
 MIDDLEWARE = [
+    "core.logs.RequestLogMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -190,10 +191,29 @@ EMAIL_HOST_PASSWORD = env("RD_EMAIL_PASSWORD", "")
 EMAIL_TIMEOUT = 10
 DEFAULT_FROM_EMAIL = env("RD_EMAIL_FROM", "Raptor Desk <desk@raptor-desk.local>")
 
+# One JSON object per line by default ("plain" for reading by eye). Requests are
+# logged by route pattern and user id, so URL tokens and emails stay out of logs.
+LOG_FORMAT = env("RD_LOG_FORMAT", "json")
+if LOG_FORMAT not in {"json", "plain"}:
+    raise ImproperlyConfigured("RD_LOG_FORMAT must be 'json' or 'plain'")
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "formatters": {"plain": {"format": "%(asctime)s %(levelname)s %(name)s %(message)s"}},
-    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "plain"}},
+    "filters": {"redact": {"()": "core.logs.RedactSecrets"}},
+    "formatters": {
+        "json": {"()": "core.logs.JsonFormatter"},
+        "plain": {"format": "%(asctime)s %(levelname)s %(name)s %(message)s"},
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": LOG_FORMAT,
+            "filters": ["redact"],
+        }
+    },
     "root": {"handlers": ["console"], "level": env("RD_LOG_LEVEL", "INFO")},
+    # Every request is already logged once by core.logs.RequestLogMiddleware;
+    # Django's own request logger only needs to report server errors.
+    "loggers": {"django.request": {"level": "ERROR"}},
 }
