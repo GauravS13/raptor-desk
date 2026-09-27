@@ -127,3 +127,26 @@ added when the decision is made, next to the commit that implements it.
 - **Why:** with several gunicorn processes, per-process counters give a different answer on every scrape. The numbers an organizer needs (reviews done, outbox stuck, last backup) are already in the database.
 - **Where:** `src/apps/ops/metrics.py` · 089f926
 
+## D-022 · The desk proposes where judges' time goes
+- **Decided:** close calls on prize cutoffs (a chance of finishing inside between 0.2 and 0.8) drive a proposal of extra reviews within an organizer-set budget. The proposal prefers judges who reviewed the neighbouring close calls, and names the projects no eligible judge can settle.
+- **Rejected:** only reporting uncertainty; assigning more reviews everywhere.
+- **Why:** more evidence helps only where a prize depends on it, and judge time is the scarce resource. The demo shows chances moving away from a coin flip after one round.
+- **Where:** `src/scoring_engine/ask.py`, `src/apps/judging/close_calls.py` · 7d921df, 113ca75, ed4e418
+
+## D-023 · Canonical input order in the engine
+- **Decided:** `evaluate()` sorts observations before bootstrapping.
+- **Why:** the seeded bootstrap depended on the order reviews arrived in, so the portal and JUDGING.md disagreed slightly on the same data. JUDGING.md's tables are now generated and checked in CI.
+- **Where:** `src/scoring_engine/normalization.py`, `tools/simulate_proof.py` · 3e9d1f5
+
+## D-024 · Decisions and snapshots are append-only; publishing is a checked phase change
+- **Decided:** deliberation decisions need a written reason and are never edited (a new decision supersedes an old one). Results are frozen into numbered, signed snapshots. Publishing is the phase change to *published*, with preflight checks and a recorded publication.
+- **Rejected:** editing the ranking in place; a separate "publish" button outside the lifecycle.
+- **Why:** after a prize is announced, the question "who decided this, and why" must have a permanent answer, and the published document must be checkable by anyone with the public key.
+- **Where:** `src/apps/judging/deliberation.py`, `snapshots.py`, `publishing.py`, `src/apps/events/hooks.py` · da6fe06, 3ec0cbf, c779bad
+
+## D-025 · The full ranking is public; judges stay anonymous
+- **Decided:** published results show the whole ranking with intervals and the organizers' decisions. Feedback reports show every comment without the judge's name, in a fixed shuffled order.
+- **Rejected:** publishing winners only; naming judges in feedback.
+- **Why:** a ranking that shows its math is only credible if all of it is visible. Naming judges would invite pressure on them and would soften their feedback.
+- **Where:** `src/apps/judging/templates/judging/public_results.html`, `src/apps/judging/feedback.py` · c779bad, 35a79b2
+

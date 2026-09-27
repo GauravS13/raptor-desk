@@ -45,6 +45,10 @@ curl -i -X POST http://localhost:8080/api/events/{{ fixture_event }}/submissions
         <td><a href="/o/events/{{ fixture_event }}/results#doubt">Close calls</a></td><td class="who">Organizer</td></tr>
       <tr><td>Progress per judge and per project, assignment planning</td>
         <td><a href="/o/events/{{ fixture_event }}/judging">Judging</a></td><td class="who">Organizer</td></tr>
+      <tr><td>Deliberation: decisions with written reasons, then results frozen into a signed snapshot</td>
+        <td><a href="/o/events/{{ fixture_event }}/deliberation">Deliberation</a></td><td class="who">Organizer</td></tr>
+      <tr><td>Publishing: blocked until close calls are decided; then public results with a method card, and a feedback report per team</td>
+        <td><a href="/o/events/{{ fixture_event }}">Overview</a> (phase changes)</td><td class="who">Organizer, then Participant</td></tr>
       <tr><td>Every change, readable and filterable; the database refuses edits to it</td>
         <td><a href="/o/events/{{ fixture_event }}/audit">Audit trail</a></td><td class="who">Organizer</td></tr>
       <tr><td>Isolation enforced in the backend: judge B asking for judge A's scores gets 403</td>

@@ -60,6 +60,15 @@ labelled `[demo]` and prints how each chance moved.
 
 The method, its formulas, the fixture numbers and a simulation proof are in [JUDGING.md](JUDGING.md).
 
+**From ranking to published result** (as the Organizer, on Sample Hack 2026):
+1. **Overview:** move the event to *deliberation*.
+2. **Deliberation:** see the undecided close calls. Record a decision with a reason, then **Freeze and sign**.
+3. **Overview:** move to *published*. Preflight blocks this while close calls on the prize places are undecided or the snapshot is out of date.
+4. Open http://localhost:8080/events/evt_01/results: the ranking, the decisions and the method card.
+5. Sign in as the Participant and open the Glass Signal project for their feedback report. Judges are unnamed. Use **Something factually wrong?** to send a query; it appears on the organizer's **Queries** tab.
+
+To start again, run `docker compose down -v && docker compose up`.
+
 **Audit trail:** the same event's **Audit** tab shows every change, filterable, with CSV download. Edits to it are rejected by the database.
 
 ## Adoptability & Operability (20%)

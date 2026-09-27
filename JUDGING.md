@@ -64,6 +64,10 @@ Isolation is enforced by the API, not the pages:
 - another judge's scores return **403** before anything is looked up
 - aggregates (results, rankings, judge diagnostics) and the audit trail are for the event's organizers only
 - review data is read through a repository layer that scopes every query to the caller
+- after publishing:
+  - everyone can read the published ranking and the signed snapshot
+  - each team can read its own feedback report, where judges are never named
+  - individual judges' scores stay closed
 
 The official acceptance checker verifies this (`acceptance-report.txt`).
 
@@ -172,6 +176,38 @@ review and in the audit trail. The chances then move away from a coin flip:
 
 Two reviews rarely settle a call on their own. The loop is meant to be run
 again as reviews arrive, and whatever is still close goes to deliberation.
+
+---
+
+## 6b. From ranking to published result
+
+1. **Deliberate.**
+   - The Deliberation tab shows the computed order and the close calls on the prize places nobody has ruled on yet.
+   - An organizer records decisions, each with a written reason:
+     - "confirm at the computed place"
+     - "place directly above"
+   - Decisions are append-only and applied in order.
+   - DOGFOOD's own tie rule is applied automatically: an exact tie on the corrected score is broken by bonus points, and the board says where that happened.
+2. **Freeze.** The final order is frozen into a numbered snapshot, signed with the deployment's Ed25519 key. It contains:
+   - every project's corrected score, interval and chances
+   - the decisions and their reasons
+   - the method and parameters
+   - a hash over every review score that went in
+
+   The snapshot table is append-only. A snapshot stays *current* until a score or a decision changes.
+3. **Publish.** Publishing is the phase change to *published*, and preflight blocks it when:
+   - nothing is frozen
+   - the latest snapshot is out of date
+   - a close call on the prize places has no decision
+
+   An override needs a written reason, and even then a signed snapshot is what gets published.
+4. **Explain.**
+   - The public results page shows the prize places, the full ranking with intervals, the decisions with their reasons, and a method card with the snapshot hash and signing key.
+   - The signed document is at `/api/events/{id}/results/published`.
+   - Every team is emailed a link to its feedback report:
+     - its place, and the judges' average per criterion against the event average
+     - every written comment and "one thing to improve", unattributed and in a fixed shuffled order
+   - A team can query a factual error. Organizers answer, and both steps are audited. The signed result itself never changes.
 
 ---
 
