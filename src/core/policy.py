@@ -75,12 +75,15 @@ class Rule:
     roles:         users holding one of these roles. With ``event_scoped`` the
                    role must be held in the event named by the URL's
                    ``event_id``; without it, in any event.
+    machine:       a route for programs outside /api/ (such as /metrics): denials
+                   are JSON 401/403, never a redirect to the login page.
     """
 
     roles: frozenset[str] = frozenset()
     public: bool = False
     authenticated: bool = False
     event_scoped: bool = True
+    machine: bool = False
     description: str = ""
 
     def __post_init__(self) -> None:
@@ -147,8 +150,8 @@ def is_api_request(request: HttpRequest) -> bool:
     return request.path.startswith("/api/")
 
 
-def deny(request: HttpRequest, decision: Decision) -> HttpResponse:
-    if is_api_request(request):
+def deny(request: HttpRequest, decision: Decision, *, machine: bool = False) -> HttpResponse:
+    if machine or is_api_request(request):
         error = unauthorized() if decision is Decision.UNAUTHENTICATED else forbidden()
         return from_api_error(error)
     if decision is Decision.UNAUTHENTICATED:
@@ -163,9 +166,10 @@ def policy(key: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     def decorator(view: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(view)
         def wrapper(request: HttpRequest, *args: Any, **kwargs: Any) -> Any:
-            decision = decide(rule_for(key), get_principal(request), kwargs.get("event_id"))
+            rule = rule_for(key)
+            decision = decide(rule, get_principal(request), kwargs.get("event_id"))
             if decision is not Decision.ALLOW:
-                return deny(request, decision)
+                return deny(request, decision, machine=rule.machine)
             return view(request, *args, **kwargs)
 
         wrapper.policy_key = key  # type: ignore[attr-defined]
