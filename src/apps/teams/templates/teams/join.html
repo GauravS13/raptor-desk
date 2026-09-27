@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Join {{ invite.team.name }} · Raptor Desk{% endblock %}
+
+{% block content %}
+<article class="narrow">
+  <h1>Join {{ invite.team.name }}</h1>
+  <p>Event: {{ invite.team.event.name }}</p>
+  {% if principal.is_authenticated %}
+    <form method="post" action="/join/{{ token }}">
+      {% csrf_token %}
+      <button type="submit">Join team</button>
+    </form>
+  {% else %}
+    <p><a href="/login?next=/join/{{ token }}" role="button">Sign in to join</a></p>
+  {% endif %}
+</article>
+{% endblock %}

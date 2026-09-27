@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     "core",
     "apps.accounts",
     "apps.events",
+    "apps.teams",
 ]
 
 AUTH_USER_MODEL = "accounts.User"

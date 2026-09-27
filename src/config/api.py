@@ -6,6 +6,7 @@ from ninja import NinjaAPI, Schema
 from apps.accounts.api import router as auth_router
 from apps.events.api import router as events_router
 from apps.events.api import templates_router
+from apps.teams.api import router as teams_router
 from core.http import ApiError, from_api_error
 from core.policy import Rule, define, get_principal, policy, register_api
 
@@ -54,3 +55,4 @@ def me(request: HttpRequest) -> MeOut:
 api.add_router("/auth", auth_router)
 api.add_router("/events", events_router)
 api.add_router("/event-templates", templates_router)
+api.add_router("", teams_router)

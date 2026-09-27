@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Your team · {{ event.name }}{% endblock %}
+
+{% block content %}
+<hgroup>
+  <h1>Your team</h1>
+  <p>{{ event.name }}</p>
+</hgroup>
+
+{% if team %}
+  <h2>{{ team.name }}</h2>
+  <ul>
+    {% for member in members %}
+      <li>{{ member.user.display_name }} <span class="muted">({{ member.get_role_display }})</span></li>
+    {% endfor %}
+  </ul>
+
+  {% if invite_url %}
+    <article>
+      <header><strong>Invite link</strong></header>
+      <p>Send this link to your teammates. It is shown only once, works for the remaining places and expires in 7 days.</p>
+      <p><code>{{ invite_url }}</code></p>
+    </article>
+  {% endif %}
+
+  {% if formation_open %}
+    {% if is_lead %}
+      <form method="post" action="/teams/{{ team.id }}/invites" class="inline">
+        {% csrf_token %}
+        <button type="submit">Create invite link</button>
+      </form>
+    {% endif %}
+    <form method="post" action="/teams/{{ team.id }}/leave" class="inline">
+      {% csrf_token %}
+      <button type="submit" class="secondary outline">Leave team</button>
+    </form>
+  {% else %}
+    <p class="muted">Team changes are closed for this event.</p>
+  {% endif %}
+{% elif formation_open %}
+  <p>You are not in a team yet. Create one, or open an invite link from a teammate.</p>
+  {% if form.non_field_errors %}<p class="notice error" role="alert">{{ form.non_field_errors|join:" " }}</p>{% endif %}
+  <form method="post" action="/events/{{ event.id }}/team">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <button type="submit">Create team</button>
+  </form>
+{% else %}
+  <p>Team formation is closed for this event.</p>
+{% endif %}
+{% endblock %}
