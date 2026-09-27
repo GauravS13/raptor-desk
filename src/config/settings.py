@@ -82,6 +82,7 @@ INSTALLED_APPS = [
     "apps.submissions",
     "apps.judging",
     "apps.seed",
+    "apps.ops",
 ]
 
 AUTH_USER_MODEL = "accounts.User"

@@ -1,5 +1,5 @@
 # Convenience targets. Every command also works without make (see README).
-.PHONY: up down reset test lint format accept check
+.PHONY: up down reset test lint format accept check backup restore
 
 up:
 	docker compose up --build
@@ -28,3 +28,15 @@ accept:
 
 check:
 	sh scripts/check.sh
+
+# Backups land in the data volume under /data/backups. Copy one off the machine with:
+#   docker compose cp app:/data/backups ./backups
+backup:
+	docker compose exec app python src/manage.py backup --keep 14
+
+# make restore FILE=raptor-desk-YYYYMMDD-HHMMSS.tar.gz
+restore:
+	@test -n "$(FILE)" || (echo "usage: make restore FILE=<backup file name>" && exit 2)
+	docker compose stop app worker
+	docker compose run --rm --no-deps --entrypoint python app src/manage.py restore "$(FILE)" --yes
+	docker compose up -d
