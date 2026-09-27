@@ -1,0 +1,32 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="htmx-config" content='{"allowEval": false, "includeIndicatorStyles": false, "selfRequestsOnly": true}'>
+  <title>{% block title %}Raptor Desk{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'vendor/pico-2.1.1.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script src="{% static 'vendor/htmx-2.0.11.min.js' %}" defer></script>
+  <script src="{% static 'js/app.js' %}" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="container">
+    <nav aria-label="Main">
+      <ul>
+        <li><a href="/" class="brand"><strong>Raptor Desk</strong></a></li>
+      </ul>
+      <ul>
+        {% block nav %}{% endblock %}
+      </ul>
+    </nav>
+  </header>
+  <main id="main" class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="container">
+    <small>Raptor Desk · MIT licensed · self-hosted</small>
+  </footer>
+</body>
+</html>

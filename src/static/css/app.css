@@ -1,0 +1,31 @@
+/* Raptor Desk styles layered on Pico. No inline styles anywhere: the CSP forbids them. */
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+}
+
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  z-index: 10;
+  padding: 0.5rem 1rem;
+  background: var(--pico-background-color);
+  outline: 2px solid var(--pico-primary);
+}
+
+.brand {
+  text-decoration: none;
+}
+
+/* htmx request indicator (htmx's own inline indicator styles are disabled for CSP). */
+.htmx-indicator {
+  opacity: 0;
+  transition: opacity 200ms ease-in;
+}
+
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator {
+  opacity: 1;
+}
