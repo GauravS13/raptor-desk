@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Audit trail · {{ event.name }}{% endblock %}
+
+{% block content %}
+{% include "events/_event_header.html" %}
+<p class="muted">Every change in this event, newest first. Entries cannot be edited or deleted: the database rejects it.</p>
+
+<form method="get" action="/o/events/{{ event.id }}/audit" class="inline-form" role="search">
+  <label for="action">Action
+    <select id="action" name="action">
+      <option value="">All</option>
+      {% for a in actions %}<option value="{{ a }}" {% if a == action %}selected{% endif %}>{{ a }}</option>{% endfor %}
+    </select>
+  </label>
+  <label for="q">Text
+    <input id="q" type="search" name="q" value="{{ q }}" placeholder="Summary or target id">
+  </label>
+  {% if actor %}<input type="hidden" name="actor" value="{{ actor }}">{% endif %}
+  <button type="submit" class="secondary">Filter</button>
+  <a href="/o/events/{{ event.id }}/exports/audit.csv">Download CSV</a>
+</form>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th scope="col">When (UTC)</th><th scope="col">Who</th><th scope="col">What</th><th scope="col">Action</th></tr></thead>
+    <tbody>
+    {% for row in rows %}
+      {% with e=row.entry %}
+      <tr>
+        <td>{{ e.at|date:"Y-m-d H:i:s" }}</td>
+        <td>{% if e.actor_id %}<a href="?actor={{ e.actor_id }}">{{ row.who }}</a>{% else %}<span class="muted">{{ row.who }}</span>{% endif %}{% if e.actor_role %} <small class="muted">{{ e.actor_role }}</small>{% endif %}</td>
+        <td>{{ e.summary }}{% if e.target_id %} <small class="muted">{{ e.target_id }}</small>{% endif %}</td>
+        <td><code>{{ e.action }}</code></td>
+      </tr>
+      {% endwith %}
+    {% empty %}
+      <tr><td colspan="4">Nothing recorded yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if page.has_other_pages %}
+<nav aria-label="Pages">
+  {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}&action={{ action|urlencode }}&q={{ q|urlencode }}&actor={{ actor|urlencode }}">Newer</a>{% endif %}
+  <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a href="?page={{ page.next_page_number }}&action={{ action|urlencode }}&q={{ q|urlencode }}&actor={{ actor|urlencode }}">Older</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

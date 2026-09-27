@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.events import views
+from apps.events import audit_views, views
 
 urlpatterns = [
     path("o/", views.org_home, name="org-home"),
@@ -19,6 +19,7 @@ urlpatterns = [
     path("o/events/<str:event_id>/prizes", views.event_add_prize, name="event-add-prize"),
     path("o/events/<str:event_id>/questions", views.event_add_question, name="event-add-question"),
     path("o/events/<str:event_id>/people", views.event_people, name="event-people"),
+    path("o/events/<str:event_id>/audit", audit_views.audit_page, name="event-audit"),
     path(
         "o/events/<str:event_id>/people/<str:user_id>/<str:role>/revoke",
         views.event_revoke,
