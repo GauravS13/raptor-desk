@@ -4,6 +4,9 @@ set -eu
 
 cd /app/src
 
+echo "raptor-desk: checking configuration (every route must declare an access policy)"
+python manage.py check --fail-level ERROR
+
 echo "raptor-desk: applying database migrations"
 python manage.py migrate --noinput
 
