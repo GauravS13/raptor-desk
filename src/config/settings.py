@@ -75,6 +75,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
+    # Listed so the API docs use django-ninja's bundled Swagger UI files, which
+    # work offline and under the CSP, instead of loading them from a CDN.
+    "ninja",
     "core",
     "apps.accounts",
     "apps.events",
