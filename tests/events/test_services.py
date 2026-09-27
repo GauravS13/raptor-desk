@@ -187,3 +187,13 @@ def test_grants_and_last_organizer_protection(event: Event, organizer: Principal
     with pytest.raises(ApiError) as excinfo:
         services.revoke_role(organizer, event, organizer.user_id, "organizer")
     assert excinfo.value.code == "last_organizer"
+
+
+def test_custom_questions_can_be_created(event: Event, organizer: Principal) -> None:
+    """Regression: the id prefix for questions was too short and creation crashed."""
+    question = services.add_question(
+        organizer, event, "Which stack?", kind="choice", choices=["Django", "Rails"]
+    )
+    assert question.id.startswith("qst_")
+    with pytest.raises(ApiError):
+        services.add_question(organizer, event, "No options", kind="choice")

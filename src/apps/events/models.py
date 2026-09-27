@@ -26,7 +26,7 @@ def _criterion_id() -> str:
 
 
 def _question_id() -> str:
-    return new_id("q")
+    return new_id("qst")
 
 
 def _transition_id() -> str:
