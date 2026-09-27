@@ -86,3 +86,37 @@ def test_api_for_organizers(event: Event) -> None:
     assert len(exported["entries"]) == 126 and exported["public_key"]
     judge = {"HTTP_AUTHORIZATION": f"Bearer {TOKENS['judge_a']}"}
     assert client.get("/api/events/evt_01/ledger", **judge).status_code == 403
+
+
+def test_reviews_from_before_the_ledger_are_backfilled(event: Event) -> None:
+    import importlib
+
+    from django.apps import apps
+
+    from apps.judging.models import ScoreItem
+
+    migration = importlib.import_module("apps.judging.migrations.0011_backfill_score_ledger")
+    source = Review.objects.filter(event=event, status="submitted").first()
+    taken = set(Assignment.objects.filter(judge_id="jdg_26").values_list("project_id", flat=True))
+    project = event.projects.exclude(pk__in=taken).first()
+    item = Assignment.objects.create(
+        event=event, judge_id="jdg_26", project=project, source="batch", status="done"
+    )
+    legacy = Review.objects.create(
+        assignment=item,
+        event=event,
+        judge_id="jdg_26",
+        project=project,
+        version=project.canonical_version,
+        comment="Written before the ledger existed",
+        status="submitted",
+        submitted_at=source.submitted_at,
+    )
+    for score in source.scores.all():
+        ScoreItem.objects.create(review=legacy, criterion=score.criterion, value=score.value)
+    assert not ledger.verify(event).valid
+
+    migration.backfill(apps, None)
+    result = ledger.verify(event)
+    assert result.valid, result
+    assert ScoreEvent.objects.get(review_id=legacy.pk).payload["kind"] == "backfilled"
