@@ -68,7 +68,8 @@ def frozen_after(table: str, column: str) -> tuple[Callable[..., None], Callable
             schema_editor.execute(
                 f"CREATE TRIGGER IF NOT EXISTS {name} BEFORE UPDATE ON {table} "
                 f"WHEN OLD.{column} IS NOT NULL "
-                f"BEGIN SELECT RAISE(ABORT, '{table} rows are immutable once {column} is set'); END;"
+                f"BEGIN SELECT RAISE(ABORT, '{table} rows are immutable once {column} is set'); "
+                "END;"
             )
         else:
             schema_editor.execute(
