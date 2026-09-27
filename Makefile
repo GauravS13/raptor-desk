@@ -1,5 +1,5 @@
 # Convenience targets. Every command also works without make (see README).
-.PHONY: up down reset test lint format accept check backup restore
+.PHONY: up down reset test lint format accept check backup restore doctor
 
 up:
 	docker compose up --build
@@ -40,3 +40,7 @@ restore:
 	docker compose stop app worker
 	docker compose run --rm --no-deps --entrypoint python app src/manage.py restore "$(FILE)" --yes
 	docker compose up -d
+
+# Health report: what is fine, what needs attention, and what to do.
+doctor:
+	docker compose exec app python src/manage.py doctor
