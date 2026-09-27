@@ -6,6 +6,7 @@ from ninja import NinjaAPI, Schema
 from apps.accounts.api import router as auth_router
 from apps.events.api import router as events_router
 from apps.events.api import templates_router
+from apps.judging.api import router as judging_router
 from apps.submissions.api import router as submissions_router
 from apps.teams.api import router as teams_router
 from core.http import ApiError, from_api_error
@@ -58,3 +59,4 @@ api.add_router("/events", events_router)
 api.add_router("/event-templates", templates_router)
 api.add_router("", teams_router)
 api.add_router("", submissions_router)
+api.add_router("", judging_router)
