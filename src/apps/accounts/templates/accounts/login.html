@@ -18,4 +18,27 @@
   </form>
   <p><a href="/login/email">Email me a sign-in link instead</a></p>
 </article>
+{% if demo_sign_ins %}
+<section class="narrow demo-panel" aria-labelledby="demo-accounts">
+  <h2 id="demo-accounts">Demo accounts</h2>
+  <p class="muted">Demo profile only: these accounts and their shared password
+    <code>{{ demo_password }}</code> are never created in production. Each button
+    sends the normal sign-in form, so nothing here bypasses authentication.</p>
+  <ul class="demo-list">
+    {% for account in demo_sign_ins %}
+    <li>
+      <form method="post" action="/login" class="demo-login">
+        {% csrf_token %}
+        <input type="hidden" name="email" value="{{ account.email }}">
+        <input type="hidden" name="password" value="{{ demo_password }}">
+        <input type="hidden" name="next" value="{% if next != '/' %}{{ next }}{% else %}{{ account.lands_on }}{% endif %}">
+        <button type="submit" class="secondary">{{ account.label }}</button>
+        <span><code>{{ account.email }}</code><br><small class="muted">{{ account.note }}</small></span>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  <p><a href="/tour">Evaluating Raptor Desk? Take the five-minute tour.</a></p>
+</section>
+{% endif %}
 {% endblock %}

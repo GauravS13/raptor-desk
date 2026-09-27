@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Five-minute tour · Raptor Desk{% endblock %}
+
+{% block content %}
+<hgroup>
+  <h1>Five-minute tour</h1>
+  <p>Each DOGFOOD scoring criterion, and where to see it working. Protected pages
+    ask you to sign in; use the demo account named in the last column
+    (password <code>{{ password }}</code>).</p>
+</hgroup>
+
+<section aria-labelledby="tier">
+  <h2 id="tier">Tier completion &amp; correctness <small class="muted">40%</small></h2>
+  <table class="tour-table">
+    <thead><tr><th scope="col">What to check</th><th scope="col">Where</th><th scope="col">Sign in as</th></tr></thead>
+    <tbody>
+      <tr><td>Public gallery of the 40 fixture projects, in fixture order, with live search</td>
+        <td><a href="/events/{{ fixture_event }}/projects">Sample Hack gallery</a></td><td class="who">anyone</td></tr>
+      <tr><td>The duplicate "Dry Harbour" submission is one project with two versions</td>
+        <td><a href="/projects/prj_07">prj_07</a></td><td class="who">anyone</td></tr>
+      <tr><td>Form a team, save a draft, submit, edit and resubmit before the deadline</td>
+        <td><a href="/events/{{ dogfood_event }}">DOGFOOD 2026 (live demo)</a></td><td class="who">Participant</td></tr>
+      <tr><td>A closed event refuses submissions in the API with 409 and the close time</td>
+        <td>the curl command below</td><td class="who">Participant</td></tr>
+    </tbody>
+  </table>
+  <pre><code>python3 tools/run.py .dogfood.toml --fixtures data/fixtures.json
+
+curl -i -X POST http://localhost:8080/api/events/{{ fixture_event }}/submissions \
+  -H "Authorization: Bearer rd_seed_prt_priya1_2e88" -H "Content-Type: application/json" \
+  -d '{"title": "late", "summary": "probe"}'</code></pre>
+</section>
+
+<section aria-labelledby="integrity">
+  <h2 id="integrity">Judging integrity <small class="muted">25%</small></h2>
+  <table class="tour-table">
+    <thead><tr><th scope="col">What to check</th><th scope="col">Where</th><th scope="col">Sign in as</th></tr></thead>
+    <tbody>
+      <tr><td>A judge's queue in their own random order; scoring with the keyboard</td>
+        <td><a href="/judge">Judge queue</a></td><td class="who">Judge A</td></tr>
+      <tr><td>Bias-corrected ranking beside the raw mean, with 90% intervals, P(top k), close calls and the excluded flat-liner</td>
+        <td><a href="/o/events/{{ fixture_event }}/results">Results</a></td><td class="who">Organizer</td></tr>
+      <tr><td>Progress per judge and per project, assignment planning</td>
+        <td><a href="/o/events/{{ fixture_event }}/judging">Judging</a></td><td class="who">Organizer</td></tr>
+      <tr><td>Every change, readable and filterable; the database refuses edits to it</td>
+        <td><a href="/o/events/{{ fixture_event }}/audit">Audit trail</a></td><td class="who">Organizer</td></tr>
+      <tr><td>Isolation enforced in the backend: judge B asking for judge A's scores gets 403</td>
+        <td>the curl command below</td><td class="who">Judge B</td></tr>
+    </tbody>
+  </table>
+  <pre><code>curl -i http://localhost:8080/api/judges/jdg_26/scores -H "Authorization: Bearer rd_seed_jdg24_44de"</code></pre>
+  <p>The full isolation matrix and the normalization proof are in <code>ACCESS-MATRIX.md</code>
+    and <code>JUDGING.md</code> in the repository.</p>
+</section>
+
+<section aria-labelledby="adopt">
+  <h2 id="adopt">Adoptability &amp; operability <small class="muted">20%</small></h2>
+  <table class="tour-table">
+    <thead><tr><th scope="col">What to check</th><th scope="col">Where</th><th scope="col">Sign in as</th></tr></thead>
+    <tbody>
+      <tr><td>DOGFOOD 2026 itself, configured from its template: the T1 gate, 40/25/20/15 weights, tie-break bonuses</td>
+        <td><a href="/o/events/{{ dogfood_event }}/rubric">Rubric</a>, <a href="/events/{{ dogfood_event }}">public page</a></td><td class="who">Organizer</td></tr>
+      <tr><td>CSV for results, reviews, assignments, teams, submissions, registrations and audit</td>
+        <td><a href="/o/events/{{ fixture_event }}/exports">Exports</a></td><td class="who">Organizer</td></tr>
+      <tr><td>Invitations and sign-in links, delivered to a local inbox</td>
+        <td><a href="http://localhost:8025">Mailpit</a></td><td class="who">anyone</td></tr>
+      <tr><td>Metrics for monitoring: counts and ages, no personal data</td>
+        <td><a href="/metrics">/metrics</a></td><td class="who">Admin</td></tr>
+    </tbody>
+  </table>
+  <pre><code>docker compose logs app | head -40     # the data hygiene report printed at boot
+make doctor                            # health report that says what to fix
+make backup                            # consistent backup while running; make restore verifies first</code></pre>
+</section>
+
+<section aria-labelledby="code">
+  <h2 id="code">Code quality &amp; innovation <small class="muted">15%</small></h2>
+  <table class="tour-table">
+    <thead><tr><th scope="col">What to check</th><th scope="col">Where</th><th scope="col">Sign in as</th></tr></thead>
+    <tbody>
+      <tr><td>Every console action is also in the REST API, with OpenAPI</td>
+        <td><a href="/api/docs">API docs</a></td><td class="who">anyone</td></tr>
+      <tr><td>This deployment's public signing key</td>
+        <td><a href="/.well-known/raptor-desk-key">/.well-known/raptor-desk-key</a></td><td class="who">anyone</td></tr>
+    </tbody>
+  </table>
+  <p><code>make check</code> runs the linters, the architecture contracts, a migration check and
+    the test suite. Design decisions and the alternatives rejected are in
+    <code>docs/DECISION-LOG.md</code>.</p>
+</section>
+
+<section aria-labelledby="accounts">
+  <h2 id="accounts">Demo accounts</h2>
+  <ul>
+    {% for account in sign_ins %}<li><strong>{{ account.label }}</strong>: <code>{{ account.email }}</code> <span class="muted">({{ account.note }})</span></li>{% endfor %}
+  </ul>
+  <p><a href="/login" role="button" class="secondary">Sign in</a></p>
+</section>
+{% endblock %}

@@ -15,6 +15,7 @@ urlpatterns = [
     path("", include("apps.submissions.urls")),
     path("", include("apps.judging.urls")),
     path("", include("apps.ops.urls")),
+    path("", include("apps.seed.urls")),
     path("api/", api.urls),
     path("admin/", admin.site.urls),
 ]

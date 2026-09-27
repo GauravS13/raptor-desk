@@ -49,6 +49,33 @@ SEED_LOGINS = (
 ADMIN_EMAIL = "admin@raptor-desk.local"
 
 
+@dataclass(frozen=True)
+class DemoSignIn:
+    label: str
+    email: str
+    note: str
+    lands_on: str
+
+
+def demo_sign_ins() -> list[DemoSignIn]:
+    """Accounts offered on the sign-in page and the tour. Empty outside the demo profile."""
+    if settings.PROFILE != "demo":
+        return []
+    organizer, judge_a, judge_b, participant = SEED_LOGINS
+    return [
+        DemoSignIn("Organizer", organizer.email, "runs both demo events", "/o/"),
+        DemoSignIn("Judge A", judge_a.email, "fixture judge jdg_26", "/judge"),
+        DemoSignIn("Judge B", judge_b.email, "fixture judge jdg_24, a peer of Judge A", "/judge"),
+        DemoSignIn(
+            "Participant",
+            participant.email,
+            "team tm_01; can form a team in DOGFOOD 2026",
+            f"/events/{DOGFOOD_EVENT_ID}",
+        ),
+        DemoSignIn("Admin", ADMIN_EMAIL, "platform administrator", "/o/"),
+    ]
+
+
 def require_demo_profile() -> None:
     if settings.PROFILE != "demo":
         raise RuntimeError("Demo data can only be created in the demo profile.")

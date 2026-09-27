@@ -7,6 +7,8 @@
 </hgroup>
 <p>Rankings that show their math and flag their own doubt, access sealed per role in the backend, and an audit trail nobody can rewrite.</p>
 
+{% if demo_profile %}<p class="notice"><a href="/tour">Evaluating Raptor Desk? Take the five-minute tour</a>, or use a demo account on the <a href="/login">sign-in page</a>.</p>{% endif %}
+
 <section aria-labelledby="events">
   <h2 id="events">Events</h2>
   {% for event in events %}

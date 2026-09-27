@@ -8,6 +8,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_http_methods, require_POST
 
 from apps.accounts import services
+from apps.seed.demo import DEMO_PASSWORD, demo_sign_ins
 from core.http import ApiError
 from core.policy import Rule, define, policy
 
@@ -35,7 +36,13 @@ def _safe_next(request: HttpRequest) -> str:
 @policy("public.auth")
 def login_view(request: HttpRequest) -> HttpResponse:
     form = PasswordLoginForm(request.POST or None)
-    context = {"form": form, "next": _safe_next(request), "error": None}
+    context = {
+        "form": form,
+        "next": _safe_next(request),
+        "error": None,
+        "demo_sign_ins": demo_sign_ins(),
+        "demo_password": DEMO_PASSWORD,
+    }
     if request.method == "POST" and form.is_valid():
         try:
             user = services.password_login(

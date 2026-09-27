@@ -241,3 +241,40 @@ tr.under td {
 table.results td {
   white-space: nowrap;
 }
+
+/* Demo accounts panel on the sign-in page (demo profile only). */
+.demo-panel {
+  margin-top: 2rem;
+}
+
+.demo-list {
+  padding: 0;
+}
+
+.demo-list li {
+  list-style: none;
+  margin-bottom: 0.75rem;
+}
+
+.demo-login {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0;
+}
+
+.demo-login button {
+  width: 8.5rem;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* Evaluator tour */
+.tour-table td:first-child {
+  width: 45%;
+}
+
+.tour-table .who {
+  white-space: nowrap;
+}
+

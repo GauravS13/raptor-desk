@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
@@ -14,7 +15,8 @@ def home(request: HttpRequest) -> HttpResponse:
     from apps.events.models import Event, Phase
 
     events = Event.objects.exclude(phase=Phase.DRAFT).order_by("-created_at")
-    return render(request, "home.html", {"events": events})
+    context = {"events": events, "demo_profile": settings.PROFILE == "demo"}
+    return render(request, "home.html", context)
 
 
 define(
