@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     "apps.events",
     "apps.teams",
     "apps.submissions",
+    "apps.judging",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
