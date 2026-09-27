@@ -1,0 +1,14 @@
+{
+  "name": "Raptor Desk",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [8080, 8025],
+  "portsAttributes": {
+    "8080": { "label": "Raptor Desk portal" },
+    "8025": { "label": "Mail inbox (Mailpit)" }
+  },
+  "postCreateCommand": "pip install --user uv==0.12.19 && uv sync",
+  "postStartCommand": "docker compose up -d --build"
+}
