@@ -82,6 +82,9 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "/login"
 
+# Public address of this portal, used in emailed links.
+BASE_URL = env("RD_BASE_URL", "http://localhost:8080").rstrip("/")
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -108,6 +111,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "apps.accounts.context.principal",
             ],
         },
     },

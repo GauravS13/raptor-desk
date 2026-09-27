@@ -3,6 +3,7 @@
 from django.http import HttpRequest, HttpResponse
 from ninja import NinjaAPI, Schema
 
+from apps.accounts.api import router as auth_router
 from core.http import ApiError, from_api_error
 from core.policy import Rule, define, get_principal, policy, register_api
 
@@ -46,3 +47,6 @@ def me(request: HttpRequest) -> MeOut:
         auth=principal.auth,
         roles={event: sorted(roles) for event, roles in principal.grants.items()},
     )
+
+
+api.add_router("/auth", auth_router)

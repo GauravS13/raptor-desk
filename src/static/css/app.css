@@ -29,3 +29,31 @@
 .htmx-request.htmx-indicator {
   opacity: 1;
 }
+
+.narrow {
+  max-width: 32rem;
+  margin-inline: auto;
+}
+
+.muted {
+  color: var(--pico-muted-color);
+}
+
+form.inline {
+  margin: 0;
+}
+
+form.inline button {
+  margin: 0;
+  padding: 0.25rem 0.75rem;
+}
+
+.notice {
+  padding: 0.75rem 1rem;
+  border-radius: var(--pico-border-radius);
+  background: var(--pico-card-sectioning-background-color);
+}
+
+.notice.error {
+  border-left: 4px solid var(--pico-del-color);
+}

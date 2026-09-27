@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Email sign-in · Raptor Desk{% endblock %}
+
+{% block content %}
+<article class="narrow">
+  <h1>Sign in by email</h1>
+  <p>We will email you a link that signs you in once and expires in 15 minutes.</p>
+  <form method="post" action="/login/email" novalidate>
+    {% csrf_token %}
+    <label for="id_email">Email</label>
+    <input id="id_email" name="email" type="email" autocomplete="email" required>
+    {% if form.email.errors %}<p class="notice error" role="alert">Enter a valid email address.</p>{% endif %}
+    <button type="submit">Send link</button>
+  </form>
+  <p><a href="/login">Sign in with a password instead</a></p>
+</article>
+{% endblock %}

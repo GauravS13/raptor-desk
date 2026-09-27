@@ -19,6 +19,17 @@
       </ul>
       <ul>
         {% block nav %}{% endblock %}
+        {% if principal.is_authenticated %}
+          <li><span class="muted">{{ principal.email }}</span></li>
+          <li>
+            <form method="post" action="/logout" class="inline">
+              {% csrf_token %}
+              <button type="submit" class="secondary outline">Sign out</button>
+            </form>
+          </li>
+        {% else %}
+          <li><a href="/login">Sign in</a></li>
+        {% endif %}
       </ul>
     </nav>
   </header>

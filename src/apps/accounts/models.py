@@ -123,3 +123,45 @@ class ApiToken(models.Model):
     @property
     def is_active(self) -> bool:
         return self.revoked_at is None
+
+
+def _magic_id() -> str:
+    return new_id("mgl")
+
+
+class MagicLink(models.Model):
+    """A single-use, short-lived sign-in link sent by email. Only the hash is stored."""
+
+    id = models.CharField(primary_key=True, max_length=40, default=_magic_id, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="magic_links")
+    token_hash = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(default=clock.now)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f"magic link for {self.user}"
+
+    @property
+    def is_usable(self) -> bool:
+        return self.used_at is None and self.expires_at > clock.now()
+
+
+class JudgeProfile(models.Model):
+    """What we know about a judge across events: expertise and declared conflicts.
+
+    Domain-based conflicts are opt-in: many judges share generic domains
+    (every fixture email is @example.org), so matching on domain by default
+    would block every assignment.
+    """
+
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, primary_key=True, related_name="judge_profile"
+    )
+    bio = models.TextField(blank=True)
+    skill_tags = models.JSONField(default=list, blank=True)
+    coi_emails = models.JSONField(default=list, blank=True)
+    coi_domains = models.JSONField(default=list, blank=True)
+
+    def __str__(self) -> str:
+        return f"judge profile of {self.user}"
