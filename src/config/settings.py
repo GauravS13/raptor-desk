@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
+    "core",
 ]
 
 MIDDLEWARE = [
