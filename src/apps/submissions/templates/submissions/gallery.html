@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Projects · {{ event.name }}{% endblock %}
+
+{% block content %}
+<hgroup>
+  <h1>Projects</h1>
+  <p><a href="/events/{{ event.id }}">{{ event.name }}</a></p>
+</hgroup>
+
+<form method="get" action="/events/{{ event.id }}/projects" role="search"
+      hx-get="/events/{{ event.id }}/projects" hx-target="#results" hx-select="#results"
+      hx-swap="outerHTML" hx-push-url="true" hx-trigger="input changed delay:300ms from:input, change from:select, submit">
+  <div class="grid">
+    <label for="q">Search
+      <input id="q" type="search" name="q" value="{{ query }}" placeholder="Name, tagline, team">
+    </label>
+    {% if tracks %}
+    <label for="track">Track
+      <select id="track" name="track">
+        <option value="">All tracks</option>
+        {% for t in tracks %}<option value="{{ t.id }}" {% if t.id == track %}selected{% endif %}>{{ t.name }}</option>{% endfor %}
+      </select>
+    </label>
+    {% endif %}
+    <label for="tag">Tech tag
+      <input id="tag" type="text" name="tag" value="{{ tag }}" placeholder="e.g. rust">
+    </label>
+  </div>
+  <noscript><button type="submit">Filter</button></noscript>
+</form>
+
+<section id="results" aria-live="polite">
+  <p class="muted">{{ total }} project{{ total|pluralize }}</p>
+  <div class="gallery">
+    {% for project in page %}
+      {% with v=project.canonical_version %}
+      <article class="project-card">
+        <h2><a href="/projects/{{ project.id }}">{{ v.name }}</a></h2>
+        {% if v.tagline %}<p>{{ v.tagline }}</p>{% endif %}
+        <p class="muted">
+          {{ project.team.name }}{% if project.track %} · {{ project.track.name }}{% endif %}
+        </p>
+        {% if v.tech_tags %}<p class="tags">{% for t in v.tech_tags %}<span class="tag">{{ t }}</span>{% endfor %}</p>{% endif %}
+      </article>
+      {% endwith %}
+    {% empty %}
+      <p>No projects match.</p>
+    {% endfor %}
+  </div>
+  {% if page.has_other_pages %}
+  <nav aria-label="Pages">
+    {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}&q={{ query|urlencode }}&track={{ track|urlencode }}&tag={{ tag|urlencode }}">Previous</a>{% endif %}
+    <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a href="?page={{ page.next_page_number }}&q={{ query|urlencode }}&track={{ track|urlencode }}&tag={{ tag|urlencode }}">Next</a>{% endif %}
+  </nav>
+  {% endif %}
+</section>
+{% endblock %}

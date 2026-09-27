@@ -11,7 +11,10 @@ define("public.home", Rule(public=True, description="The start page is public.")
 @require_GET
 @policy("public.home")
 def home(request: HttpRequest) -> HttpResponse:
-    return render(request, "home.html")
+    from apps.events.models import Event, Phase
+
+    events = Event.objects.exclude(phase=Phase.DRAFT).order_by("-created_at")
+    return render(request, "home.html", {"events": events})
 
 
 define(

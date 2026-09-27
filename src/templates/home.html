@@ -6,4 +6,17 @@
   <p>The hackathon judging desk you can run on Monday.</p>
 </hgroup>
 <p>Fair rankings that show their math, sealed access for every role, and signed records for every judge.</p>
+
+<section aria-labelledby="events">
+  <h2 id="events">Events</h2>
+  {% for event in events %}
+    <article>
+      <h3><a href="/events/{{ event.id }}">{{ event.name }}</a></h3>
+      <p class="muted">{{ event.get_phase_display }}{% if event.submissions_close_at %} · submissions close {{ event.submissions_close_at|date:"Y-m-d H:i" }} UTC{% endif %}</p>
+      <a href="/events/{{ event.id }}/projects">Browse projects</a>
+    </article>
+  {% empty %}
+    <p>No public events yet.</p>
+  {% endfor %}
+</section>
 {% endblock %}

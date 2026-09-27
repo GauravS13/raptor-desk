@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}{% if version %}{{ version.name }}{% else %}Project{% endif %} · {{ event.name }}{% endblock %}
+
+{% block content %}
+<p><a href="/events/{{ event.id }}/projects">← All projects in {{ event.name }}</a></p>
+{% if version %}
+<hgroup>
+  <h1>{{ version.name }}</h1>
+  <p>{{ version.tagline }}</p>
+</hgroup>
+<p class="muted">{{ project.team.name }}{% if project.track %} · {{ project.track.name }}{% endif %} · version {{ version.n }}, submitted {{ version.submitted_at|date:"Y-m-d H:i" }} UTC</p>
+{% if version.description %}<p>{{ version.description|linebreaksbr }}</p>{% endif %}
+<ul>
+  {% if version.repo_url %}<li><a href="{{ version.repo_url }}" rel="noopener noreferrer">Repository</a></li>{% endif %}
+  {% if version.video_url %}<li><a href="{{ version.video_url }}" rel="noopener noreferrer">Demo video</a></li>{% endif %}
+  {% if version.live_url %}<li><a href="{{ version.live_url }}" rel="noopener noreferrer">Live link</a></li>{% endif %}
+</ul>
+{% if version.tech_tags %}<p class="tags">{% for t in version.tech_tags %}<span class="tag">{{ t }}</span>{% endfor %}</p>{% endif %}
+{% if answers %}
+<section aria-labelledby="answers"><h2 id="answers">Answers</h2>
+  <dl>{% for a in answers %}<dt>{{ a.question.label }}</dt><dd>{{ a.value|default:"—" }}</dd>{% endfor %}</dl>
+</section>
+{% endif %}
+{% else %}
+<h1>Not submitted yet</h1>
+{% endif %}
+
+{% if is_member %}
+<article>
+  <header><strong>Your team</strong></header>
+  {% if draft %}<p>You have an unsubmitted draft (version {{ draft.n }}).</p>{% endif %}
+  {% if event.submissions_are_open %}
+    <a href="/events/{{ event.id }}/submit" role="button">Edit submission</a>
+    <form method="post" action="/projects/{{ project.id }}/withdraw" class="inline">
+      {% csrf_token %}
+      <button type="submit" class="secondary outline">Withdraw</button>
+    </form>
+  {% else %}
+    <p class="muted">Submissions are closed.</p>
+  {% endif %}
+</article>
+{% endif %}
+{% endblock %}

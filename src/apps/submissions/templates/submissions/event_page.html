@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.name }} · Raptor Desk{% endblock %}
+
+{% block content %}
+<hgroup>
+  <h1>{{ event.name }}</h1>
+  <p>{{ event.get_phase_display }}</p>
+</hgroup>
+{% if event.description %}<p>{{ event.description|linebreaksbr }}</p>{% endif %}
+
+<p>
+  <a href="/events/{{ event.id }}/projects" role="button">Browse {{ project_count }} project{{ project_count|pluralize }}</a>
+  {% if principal.is_authenticated %}
+    <a href="/events/{{ event.id }}/team" role="button" class="secondary">{% if my_team %}Your team: {{ my_team.name }}{% else %}Form a team{% endif %}</a>
+    {% if my_team and event.submissions_are_open %}<a href="/events/{{ event.id }}/submit" role="button" class="secondary">Your submission</a>{% endif %}
+  {% endif %}
+</p>
+
+<dl class="facts">
+  <dt>Submissions close</dt><dd>{{ event.submissions_close_at|date:"Y-m-d H:i"|default:"not set" }} UTC{% if not event.submissions_are_open %} · closed{% endif %}</dd>
+  <dt>Reviews per project</dt><dd>{{ event.reviews_per_project }}</dd>
+  <dt>Maximum team size</dt><dd>{{ event.max_team_size }}</dd>
+</dl>
+
+{% if event.tracks.exists %}
+<section aria-labelledby="tracks"><h2 id="tracks">Tracks</h2>
+  <ul>{% for t in event.tracks.all %}<li>{{ t.name }}</li>{% endfor %}</ul>
+</section>
+{% endif %}
+
+{% if event.prizes.exists %}
+<section aria-labelledby="prizes"><h2 id="prizes">Prizes</h2>
+  <ol>{% for p in event.prizes.all %}<li>{{ p.name }}{% if p.amount %} · {{ p.amount }}{% endif %}</li>{% endfor %}</ol>
+</section>
+{% endif %}
+
+{% if criteria %}
+<section aria-labelledby="rubric"><h2 id="rubric">How projects are judged</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th scope="col">Criterion</th><th scope="col">Weight</th><th scope="col">Scale</th></tr></thead>
+    <tbody>
+    {% for c in criteria %}
+      <tr>
+        <td>{{ c.label }}{% if c.description %}<br><small class="muted">{{ c.description }}</small>{% endif %}</td>
+        <td>{% if c.is_gate %}gate{% elif c.is_bonus %}tie-break only{% else %}{{ c.weight|floatformat:"-3" }}{% if event.weighting == "percent" %}%{% else %}×{% endif %}{% endif %}</td>
+        <td>{{ c.min_score }}–{{ c.max_score }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
