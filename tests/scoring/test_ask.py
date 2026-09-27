@@ -64,3 +64,10 @@ def test_load_then_experience_break_ties_and_the_result_is_reproducible() -> Non
     plan = propose(calls, judges, **kwargs)
     assert [p.judge for p in plan.proposals] == ["veteran", "novice"]
     assert propose(calls, judges, **kwargs).proposals == plan.proposals
+
+
+def test_budget_spends_judge_time_on_the_most_uncertain_first() -> None:
+    calls = [CloseCall(_p("sure"), 5, 0.25), CloseCall(_p("coin"), 5, 0.5)]
+    judges = [JudgeInput(f"j{i}") for i in range(6)]
+    plan = propose(calls, judges, reviewers={}, max_load=10, per_project=2, budget=2)
+    assert [p.project for p in plan.proposals] == ["coin", "coin"]

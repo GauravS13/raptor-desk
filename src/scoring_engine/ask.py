@@ -6,7 +6,8 @@ exactly those projects is what separates them; more evidence anywhere else
 changes nothing a prize depends on.
 
 For each close call, most uncertain first (chance nearest 0.5), the desk picks
-``per_project`` judges.
+``per_project`` judges, stopping when ``budget`` reviews have been proposed: the
+organizer decides how much judge time to spend, the desk decides where.
 
 Hard constraints (never broken):
   * the judge is eligible: covers the track, has no conflict with the team;
@@ -56,6 +57,7 @@ def propose(
     conflicts: set[tuple[str, str]] | None = None,
     exclude: set[str] | None = None,
     per_project: int = 2,
+    budget: int | None = None,
 ) -> Plan:
     reviewers = {p: set(js) for p, js in reviewers.items()}
     load = defaultdict(int, load or {})
@@ -69,9 +71,13 @@ def propose(
 
     result = Plan()
     for call in most_uncertain(close_calls):
+        if budget is not None and len(result.proposals) >= budget:
+            break
         project = call.project
         neighbours = band[call.cutoff] - {project.id}
         for _ in range(per_project):
+            if budget is not None and len(result.proposals) >= budget:
+                break
             pool = [
                 j
                 for j in judges

@@ -8,9 +8,10 @@ from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
+from apps.accounts.models import User
 from apps.events import policies as event_policies
 from apps.events.services import get_event
-from apps.judging import exports, services
+from apps.judging import close_calls, exports, services
 from apps.judging import results as results_service
 from apps.judging.api import JUDGE_SELF
 from apps.judging.models import Assignment
@@ -258,6 +259,9 @@ def organizer_results(request: HttpRequest, event_id: str) -> HttpResponse:
     computed = results_service.compute(event, method=method)
     rows = results_service.as_rows(computed)
     judges = sorted(computed.evaluation.judges, key=lambda j: j.severity)
+    budget = _budget(request.GET.get("budget"))
+    doubt = close_calls.report(event, budget=budget, results=computed)
+    names = dict(User.objects.filter(pk__in=services.judge_ids(event)).values_list("pk", "name"))
     context = {
         "event": event,
         "tab": "results",
@@ -273,5 +277,35 @@ def organizer_results(request: HttpRequest, event_id: str) -> HttpResponse:
         "params": computed.evaluation.params,
         "judges": judges,
         "gated_out": computed.gated_out,
+        "doubt": doubt,
+        "project_names": doubt.results.names,
+        "judge_names": names,
+        "can_ask": event.phase == "judging",
+        "budgets": (2, 4, 6, 10, 20),
     }
     return render(request, "judging/results.html", context)
+
+
+def _budget(raw: str | None) -> int:
+    try:
+        return min(max(int(raw or close_calls.DEFAULT_BUDGET), 1), 100)
+    except ValueError:
+        return close_calls.DEFAULT_BUDGET
+
+
+@require_POST
+@ui_action("judging.close_calls_ask")
+@policy(event_policies.EVENTS_MANAGE)
+def organizer_ask(request: HttpRequest, event_id: str) -> HttpResponse:
+    budget = _budget(request.POST.get("budget"))
+    created = close_calls.approve(get_principal(request), get_event(event_id), budget=budget)
+    if created:
+        judges = len({item.judge_id for item in created})
+        messages.success(
+            request,
+            f"Asked {judges} judge(s) for {len(created)} extra review(s); they have been emailed. "
+            "The chances update as the reviews come in.",
+        )
+    else:
+        messages.info(request, "Nothing to ask: no close call has an eligible judge left.")
+    return HttpResponseRedirect(f"/o/events/{event_id}/results?budget={budget}")

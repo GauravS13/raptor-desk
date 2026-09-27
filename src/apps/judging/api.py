@@ -4,11 +4,11 @@ from datetime import datetime
 from typing import Any
 
 from django.http import HttpRequest, HttpResponse
-from ninja import Router, Schema, Status
+from ninja import Field, Router, Schema, Status
 
 from apps.events import policies as event_policies
 from apps.events.services import get_event
-from apps.judging import exports, repositories, services
+from apps.judging import close_calls, exports, repositories, services
 from apps.judging import results as results_service
 from apps.judging.models import Review
 from core.actions import api_action
@@ -432,3 +432,75 @@ def event_results(request: HttpRequest, event_id: str, method: str = "additive")
         gated_out=computed.gated_out,
         judges=[JudgeDiagnosticsOut(**j.__dict__) for j in computed.evaluation.judges],
     )
+
+
+# --- Measure, Doubt, Ask -----------------------------------------------------------
+
+
+class CloseCallOut(Schema):
+    project_id: str
+    cutoff: int
+    chance: float
+
+
+class ProposalOut(Schema):
+    judge_id: str
+    project_id: str
+    reason: str
+
+
+class CloseCallsOut(Schema):
+    event_id: str
+    close_calls: list[CloseCallOut]
+    waiting: dict[str, list[str]]
+    proposals: list[ProposalOut]
+    shortfalls: dict[str, int]
+    budget: int
+
+
+class PairIn(Schema):
+    judge_id: str
+    project_id: str
+
+
+class AskIn(Schema):
+    budget: int = Field(close_calls.DEFAULT_BUDGET, ge=1, le=100)
+    pairs: list[PairIn] | None = None
+
+
+@router.get("/events/{event_id}/close-calls", response=CloseCallsOut)
+@policy(event_policies.EVENTS_MANAGE)
+def list_close_calls(
+    request: HttpRequest, event_id: str, budget: int = close_calls.DEFAULT_BUDGET
+) -> CloseCallsOut:
+    """Close calls on the prize places, and the extra reviews proposed to settle them."""
+    budget = min(max(budget, 1), 100)
+    found = close_calls.report(get_event(event_id), budget=budget)
+    return CloseCallsOut(
+        event_id=event_id,
+        close_calls=[
+            CloseCallOut(project_id=c.project.id, cutoff=c.cutoff, chance=c.p)
+            for c in found.close_calls
+        ],
+        waiting=found.waiting,
+        proposals=[
+            ProposalOut(judge_id=p.judge, project_id=p.project, reason=p.reason)
+            for p in found.proposals
+        ],
+        shortfalls=found.shortfalls,
+        budget=found.budget,
+    )
+
+
+@router.post("/events/{event_id}/close-calls/ask", response={201: list[AssignmentOut]})
+@api_action("judging.close_calls_ask")
+@policy(event_policies.EVENTS_MANAGE)
+def ask_close_calls(
+    request: HttpRequest, event_id: str, payload: AskIn
+) -> Status[list[AssignmentOut]]:
+    """Approve the proposals (all, or the listed pairs): judges are assigned and emailed."""
+    pairs = [(p.judge_id, p.project_id) for p in payload.pairs] if payload.pairs else None
+    created = close_calls.approve(
+        get_principal(request), get_event(event_id), budget=payload.budget, pairs=pairs
+    )
+    return Status(201, [assignment_out(item) for item in created])

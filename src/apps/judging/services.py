@@ -74,7 +74,7 @@ def _check_assignable(event: Event, judge_id: str, project: Project) -> None:
         raise conflict("other_track", "This judge does not cover that project's track.")
 
 
-def _queue_position() -> int:
+def random_queue_position() -> int:
     """Random per assignment, so the order a judge sees projects in is not systematic."""
     return secrets.randbelow(1_000_000)
 
@@ -104,7 +104,7 @@ def assign_batch(
                 source="batch",
                 status="active",
                 reason="Assigned by an organizer",
-                queue_position=_queue_position(),
+                queue_position=random_queue_position(),
                 created_by_id=actor.user_id or "",
             )
         )
@@ -116,7 +116,7 @@ def assign_batch(
         event_id=event.pk,
         details={"judge": judge_id, "projects": project_ids},
     )
-    _notify_judge(event, judge_id, len(created))
+    notify_judge(event, judge_id, len(created))
     return created
 
 
@@ -152,7 +152,7 @@ def propose_assignments(actor: Principal, event: Event) -> PlanResult:
             source="auto",
             status="proposed",
             reason=p.reason,
-            queue_position=_queue_position(),
+            queue_position=random_queue_position(),
             created_by_id=actor.user_id or "",
         )
         for p in result.proposals
@@ -177,7 +177,7 @@ def publish_proposals(actor: Principal, event: Event) -> int:
         per_judge[item.judge_id] = per_judge.get(item.judge_id, 0) + 1
     count = proposed.update(status="active")
     for judge_id, n in per_judge.items():
-        _notify_judge(event, judge_id, n)
+        notify_judge(event, judge_id, n)
     audit.record(
         "judging.plan_published",
         f"Published {count} proposed assignments",
@@ -233,7 +233,7 @@ def declare_conflict(
     return record
 
 
-def _notify_judge(event: Event, judge_id: str, count: int) -> None:
+def notify_judge(event: Event, judge_id: str, count: int) -> None:
     user = User.objects.filter(pk=judge_id).first()
     if user is None or count == 0:
         return

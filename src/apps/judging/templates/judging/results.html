@@ -24,6 +24,70 @@
   {% if flags %}<p class="notice warning">{% for f in flags %}{{ f|flag_label }}{% if not forloop.last %} · {% endif %}{% endfor %}</p>{% endif %}
 </article>
 
+<section class="doubt" aria-labelledby="doubt">
+  <h2 id="doubt">Close calls <small class="muted">measure, doubt, ask</small></h2>
+  {% if not doubt.close_calls %}
+    <p>No close calls: every prize place is confident.</p>
+  {% else %}
+    <p>These projects could finish either side of a prize cutoff: their chance of making it is between 20% and 80%.
+      A few more reviews of exactly these projects is the cheapest way to settle them.</p>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">Project</th><th scope="col">Closest call</th><th scope="col">Chance</th><th scope="col">Status</th></tr></thead>
+      <tbody>
+      {% for call in doubt.close_calls %}
+        <tr>
+          <td>{{ project_names|get_item:call.project.id }} <small class="muted">{{ call.project.id }}</small></td>
+          <td>top {{ call.cutoff }}</td>
+          <td>{{ call.p|percent }}</td>
+          <td>{{ doubt.statuses|get_item:call.project.id }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    <form method="get" action="/o/events/{{ event.id }}/results" class="inline-form">
+      <input type="hidden" name="method" value="{{ method }}">
+      <label for="budget">Extra reviews to spend</label>
+      <select id="budget" name="budget">
+        {% for b in budgets %}<option value="{{ b }}" {% if b == doubt.budget %}selected{% endif %}>{{ b }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="secondary">Propose</button>
+    </form>
+    {% if doubt.proposals %}
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">Ask judge</th><th scope="col">To review</th><th scope="col">Why this judge</th></tr></thead>
+        <tbody>
+        {% for p in doubt.proposals %}
+          <tr>
+            <td>{{ judge_names|get_item:p.judge|default:p.judge }} <small class="muted">{{ p.judge }}</small></td>
+            <td>{{ project_names|get_item:p.project }} <small class="muted">{{ p.project }}</small></td>
+            <td>{{ p.reason }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      {% if can_ask %}
+        <form method="post" action="/o/events/{{ event.id }}/close-calls/ask">
+          {% csrf_token %}
+          <input type="hidden" name="budget" value="{{ doubt.budget }}">
+          <button type="submit">Ask these judges ({{ doubt.proposals|length }} review{{ doubt.proposals|length|pluralize }})</button>
+        </form>
+      {% else %}
+        <p class="muted">Extra reviews can be requested while the event is in the judging phase.</p>
+      {% endif %}
+    {% elif doubt.waiting %}
+      <p class="muted">Every close call is waiting for reviews already asked for.</p>
+    {% else %}
+      <p class="muted">No eligible judge is left for these projects (tracks, conflicts, load); decide them in deliberation.</p>
+    {% endif %}
+    {% if doubt.unaskable %}<p class="muted">No eligible judge is left for {{ doubt.unaskable|join:", " }}: everyone who covers
+      their track has reviewed them already or has a conflict. Settle these in deliberation.</p>{% endif %}
+  {% endif %}
+</section>
+
 <div class="table-wrap">
 <table class="results">
   <thead>
