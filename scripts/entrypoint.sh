@@ -10,6 +10,9 @@ python manage.py check --fail-level ERROR
 echo "raptor-desk: applying database migrations"
 python manage.py migrate --noinput
 
+echo "raptor-desk: seeding (demo profile loads the official fixtures)"
+python manage.py seed
+
 echo "raptor-desk: serving on http://localhost:8080"
 exec gunicorn config.wsgi:application \
     --bind 0.0.0.0:8080 \
