@@ -21,7 +21,7 @@ from django.http import HttpRequest, HttpResponse
 SECRET_ROUTE_PREFIXES = ("join", "login/magic", "api/invites")
 
 _SECRET_PATH = re.compile(
-    r"(/(?:" + "|".join(re.escape(p) for p in SECRET_ROUTE_PREFIXES) + r")/)[^/?#\s'\"]+"
+    r"(/(?:" + "|".join(re.escape(p) for p in SECRET_ROUTE_PREFIXES) + r")/)(?!<)[^/?#\s'\"]+"
 )
 _REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 _RESERVED = set(vars(logging.makeLogRecord({}))) | {"message", "asctime", "request"}

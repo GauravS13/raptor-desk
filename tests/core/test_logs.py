@@ -66,6 +66,10 @@ def test_requests_are_logged_by_route_not_raw_path(client, caplog) -> None:
     assert SECRET not in _format(lines[0])
 
 
+def test_route_patterns_are_left_readable() -> None:
+    assert redact("GET /join/<str:token> 302") == "GET /join/<str:token> 302"
+
+
 @pytest.mark.django_db
 def test_request_id_is_echoed_or_generated(client) -> None:
     assert client.get("/healthz", HTTP_X_REQUEST_ID="proxy-42").headers["X-Request-ID"] == (
