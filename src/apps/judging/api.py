@@ -12,6 +12,7 @@ from apps.judging import (
     close_calls,
     deliberation,
     exports,
+    feedback,
     publishing,
     repositories,
     services,
@@ -665,3 +666,111 @@ def published_results(request: HttpRequest, event_id: str) -> dict[str, Any]:
         **snapshots.signed_document(publication.snapshot),
         "published_at": publication.published_at.isoformat(),
     }
+
+
+# --- Feedback reports and result queries ---------------------------------------------
+
+FEEDBACK = define(
+    "judging.feedback",
+    Rule(
+        authenticated=True,
+        description="Feedback report and result queries: the team and organizers (per project).",
+    ),
+)
+
+
+class CriterionLineOut(Schema):
+    key: str
+    label: str
+    weight: float
+    scale: str
+    team_mean: float | None
+    event_mean: float | None
+
+
+class QueryOut(Schema):
+    id: str
+    project_id: str
+    message: str
+    status: str
+    response: str
+    created_at: datetime
+    responded_at: datetime | None
+
+
+class FeedbackOut(Schema):
+    project_id: str
+    place: int
+    of: int
+    band: str
+    score: float
+    ci: list[float]
+    reviews: int
+    silent_reviews: int
+    criteria: list[CriterionLineOut]
+    comments: list[dict[str, str]]
+    queries: list[QueryOut]
+
+
+class QueryIn(Schema):
+    message: str
+
+
+class AnswerIn(Schema):
+    response: str
+
+
+def query_out(item: Any) -> QueryOut:
+    return QueryOut(
+        id=item.pk,
+        project_id=item.project_id,
+        message=item.message,
+        status=item.status,
+        response=item.response,
+        created_at=item.created_at,
+        responded_at=item.responded_at,
+    )
+
+
+@router.get("/projects/{project_id}/feedback", response=FeedbackOut)
+@policy(FEEDBACK)
+def project_feedback(request: HttpRequest, project_id: str) -> FeedbackOut:
+    """The team's feedback report, once results are published. Judges are never named."""
+    found = feedback.report(get_principal(request), project_id)
+    return FeedbackOut(
+        project_id=project_id,
+        place=found.place,
+        of=found.of,
+        band=found.band,
+        score=found.score,
+        ci=list(found.ci),
+        reviews=found.reviews,
+        silent_reviews=found.silent_reviews,
+        criteria=[CriterionLineOut(**line.__dict__) for line in found.criteria],
+        comments=found.comments,
+        queries=[query_out(q) for q in found.queries],
+    )
+
+
+@router.post("/projects/{project_id}/queries", response={201: QueryOut})
+@api_action("judging.query_result")
+@policy(FEEDBACK)
+def query_result(request: HttpRequest, project_id: str, payload: QueryIn) -> Status[QueryOut]:
+    item = feedback.submit_query(get_principal(request), project_id, payload.message)
+    return Status(201, query_out(item))
+
+
+@router.get("/events/{event_id}/queries", response=list[QueryOut])
+@policy(event_policies.EVENTS_MANAGE)
+def list_queries(request: HttpRequest, event_id: str) -> list[QueryOut]:
+    return [query_out(q) for q in get_event(event_id).queries.all()]
+
+
+@router.post("/events/{event_id}/queries/{query_id}/answer", response=QueryOut)
+@api_action("judging.answer_query")
+@policy(event_policies.EVENTS_MANAGE)
+def answer_query(request: HttpRequest, event_id: str, query_id: str, payload: AnswerIn) -> QueryOut:
+    item = feedback.answer_query(
+        get_principal(request), get_event(event_id), query_id, payload.response
+    )
+    return query_out(item)

@@ -34,6 +34,14 @@ urlpatterns = [
     ),
     path("o/events/<str:event_id>/results/freeze", views.organizer_freeze, name="org-freeze"),
     path("events/<str:event_id>/results", views.public_results, name="public-results"),
+    path("projects/<str:project_id>/feedback", views.feedback_page, name="feedback"),
+    path("projects/<str:project_id>/queries", views.feedback_query, name="feedback-query"),
+    path("o/events/<str:event_id>/queries", views.organizer_queries, name="org-queries"),
+    path(
+        "o/events/<str:event_id>/queries/<str:query_id>/answer",
+        views.organizer_answer,
+        name="org-answer",
+    ),
     path(
         "o/events/<str:event_id>/results/snapshots/<int:number>.json",
         views.organizer_snapshot,

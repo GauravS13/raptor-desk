@@ -35,6 +35,10 @@ def _snapshot_id() -> str:
     return new_id("snp")
 
 
+def _query_id() -> str:
+    return new_id("qry")
+
+
 class JudgeTrack(models.Model):
     """Which tracks a judge covers in an event. A judge never sees another track's projects."""
 
@@ -277,3 +281,38 @@ class Publication(models.Model):
 
     def __str__(self) -> str:
         return f"{self.event_id} published snapshot #{self.snapshot.number}"
+
+
+class QueryStatus(models.TextChoices):
+    OPEN = "open", "Open"
+    ANSWERED = "answered", "Answered"
+
+
+class ResultQuery(models.Model):
+    """A team flags a factual error in its feedback report; an organizer answers it.
+
+    Every step is in the audit trail. The published results never change: an
+    answer explains, and any correction is made by the organizers outside the
+    signed snapshot.
+    """
+
+    id = models.CharField(primary_key=True, max_length=40, default=_query_id, editable=False)
+    event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="queries")
+    project = models.ForeignKey(
+        "submissions.Project", on_delete=models.CASCADE, related_name="queries"
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="result_queries"
+    )
+    message = models.TextField()
+    status = models.CharField(max_length=10, choices=QueryStatus.choices, default=QueryStatus.OPEN)
+    response = models.TextField(blank=True)
+    responded_by_id = models.CharField(max_length=40, blank=True)
+    created_at = models.DateTimeField(default=clock.now)
+    responded_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering: ClassVar[list[str]] = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"query on {self.project_id} ({self.status})"

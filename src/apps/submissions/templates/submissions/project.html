@@ -26,6 +26,10 @@
 <h1>Not submitted yet</h1>
 {% endif %}
 
+{% if is_member and event.phase == "published" or is_member and event.phase == "archived" %}
+<p class="notice success">Results are published. <a href="/projects/{{ project.id }}/feedback">Read your team's feedback report</a>.</p>
+{% endif %}
+
 {% if is_member %}
 <article>
   <header><strong>Your team</strong></header>

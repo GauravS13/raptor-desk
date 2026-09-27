@@ -79,6 +79,9 @@ def record_publication(actor: Principal, event: Event) -> None:
         event_id=event.pk,
         target=snapshot,
     )
+    from apps.judging import feedback  # feedback imports this module
+
+    feedback.notify_teams(event)
 
 
 def published(event: Event) -> Publication | None:

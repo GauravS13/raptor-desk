@@ -11,10 +11,19 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from apps.accounts.models import User
 from apps.events import policies as event_policies
 from apps.events.services import get_event
-from apps.judging import close_calls, deliberation, exports, publishing, services, snapshots
+from apps.judging import (
+    close_calls,
+    deliberation,
+    exports,
+    feedback,
+    publishing,
+    services,
+    snapshots,
+)
 from apps.judging import results as results_service
-from apps.judging.api import JUDGE_SELF
+from apps.judging.api import FEEDBACK, JUDGE_SELF
 from apps.judging.models import Assignment
+from apps.submissions import services as submission_services
 from apps.submissions.models import Project
 from core.actions import ui_action
 from core.http import ApiError, not_found
@@ -417,3 +426,58 @@ def public_results(request: HttpRequest, event_id: str) -> HttpResponse:
         "names": {row["project"]: row["name"] for row in payload["ranking"]},
     }
     return render(request, "judging/public_results.html", context)
+
+
+@require_GET
+@policy(FEEDBACK)
+def feedback_page(request: HttpRequest, project_id: str) -> HttpResponse:
+    principal = get_principal(request)
+    found = feedback.report(principal, project_id)
+    context = {
+        "report": found,
+        "event": found.event,
+        "can_query": submission_services.is_member(principal, found.project),
+    }
+    return render(request, "judging/feedback.html", context)
+
+
+@require_POST
+@ui_action("judging.query_result")
+@policy(FEEDBACK)
+def feedback_query(request: HttpRequest, project_id: str) -> HttpResponse:
+    try:
+        feedback.submit_query(get_principal(request), project_id, request.POST.get("message", ""))
+    except ApiError as exc:
+        if exc.status == 404:
+            raise
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, "Query sent to the organizers. You will get an email answer.")
+    return HttpResponseRedirect(f"/projects/{project_id}/feedback")
+
+
+@require_GET
+@policy(event_policies.EVENTS_MANAGE)
+def organizer_queries(request: HttpRequest, event_id: str) -> HttpResponse:
+    event = get_event(event_id)
+    items = list(event.queries.select_related("project__canonical_version", "author"))
+    return render(
+        request, "judging/queries.html", {"event": event, "tab": "queries", "queries": items}
+    )
+
+
+@require_POST
+@ui_action("judging.answer_query")
+@policy(event_policies.EVENTS_MANAGE)
+def organizer_answer(request: HttpRequest, event_id: str, query_id: str) -> HttpResponse:
+    try:
+        feedback.answer_query(
+            get_principal(request), get_event(event_id), query_id, request.POST.get("response", "")
+        )
+    except ApiError as exc:
+        if exc.status == 404:
+            raise
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, "Answer saved and emailed to the team.")
+    return HttpResponseRedirect(f"/o/events/{event_id}/queries")

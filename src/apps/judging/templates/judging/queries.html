@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Queries · {{ event.name }}{% endblock %}
+
+{% block content %}
+{% include "events/_event_header.html" %}
+
+<p>Teams can flag a factual error in their feedback report after results are published. Each answer is emailed to the
+  team member who asked, and both steps are in the audit trail.</p>
+
+{% for q in queries %}
+  <article>
+    <header>
+      <strong>{{ q.project.canonical_version.name|default:q.project_id }}</strong> <small class="muted">{{ q.project_id }}</small>
+      <span class="tag">{{ q.get_status_display }}</span>
+      <small class="muted">{{ q.created_at|date:"Y-m-d H:i" }} UTC · {{ q.author.email }}</small>
+    </header>
+    <p>{{ q.message|linebreaksbr }}</p>
+    {% if q.status == "open" %}
+      <form method="post" action="/o/events/{{ event.id }}/queries/{{ q.id }}/answer">
+        {% csrf_token %}
+        <label for="response-{{ q.id }}">Answer</label>
+        <textarea id="response-{{ q.id }}" name="response" rows="3" minlength="20" required></textarea>
+        <button type="submit">Answer and email the team</button>
+      </form>
+    {% else %}
+      <p><strong>Answered {{ q.responded_at|date:"Y-m-d H:i" }} UTC:</strong> {{ q.response|linebreaksbr }}</p>
+    {% endif %}
+  </article>
+{% empty %}
+  <p class="muted">No queries yet.</p>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Feedback · {{ report.project.canonical_version.name }}{% endblock %}
+
+{% block content %}
+<hgroup>
+  <h1>Feedback report: {{ report.project.canonical_version.name }}</h1>
+  <p>{{ report.event.name }} · {{ report.project.team.name }}</p>
+</hgroup>
+
+<article>
+  <p><strong>Place {{ report.place }} of {{ report.of }}</strong> ({{ report.band }}).
+    Corrected score {{ report.score|floatformat:2 }}, likely between {{ report.ci.0|floatformat:2 }} and {{ report.ci.1|floatformat:2 }}.</p>
+  <p class="muted">{{ report.reviews }} judge{{ report.reviews|pluralize }} reviewed your project. Your place comes from the corrected
+    score, which removes each judge's general leniency or harshness, so a place is not decided by which judges you drew.
+    <a href="/events/{{ report.event.id }}/results">How the results were made</a>.</p>
+</article>
+
+<section aria-labelledby="criteria">
+  <h2 id="criteria">Scores by criterion</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th scope="col">Criterion</th><th scope="col">Weight</th><th scope="col">Scale</th><th scope="col">Your average</th><th scope="col">Event average</th></tr></thead>
+    <tbody>
+    {% for line in report.criteria %}
+      <tr>
+        <td>{{ line.label }}</td><td>{{ line.weight|floatformat:"-2" }}</td><td>{{ line.scale }}</td>
+        <td><strong>{{ line.team_mean|floatformat:2|default:"–" }}</strong></td>
+        <td>{{ line.event_mean|floatformat:2|default:"–" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="muted">These are the judges' raw rubric scores, before the leniency correction.</p>
+</section>
+
+<section aria-labelledby="written">
+  <h2 id="written">What the judges wrote</h2>
+  {% if report.silent_reviews %}<p class="notice warning">{{ report.silent_reviews }} of {{ report.reviews }} judge{{ report.reviews|pluralize }} left no written comment.</p>{% endif %}
+  {% for c in report.comments %}
+    <article>
+      <header><strong>Reviewer {{ forloop.counter }}</strong></header>
+      {% if c.comment %}<p>{{ c.comment|linebreaksbr }}</p>{% endif %}
+      {% if c.improvement %}<p><strong>One thing to improve:</strong> {{ c.improvement|linebreaksbr }}</p>{% endif %}
+    </article>
+  {% empty %}
+    <p class="muted">No written feedback was left for this project.</p>
+  {% endfor %}
+  <p class="muted">Reviewers are numbered in a fixed random order; names are never shown.</p>
+</section>
+
+<section aria-labelledby="query">
+  <h2 id="query">Something factually wrong?</h2>
+  {% for q in report.queries %}
+    <article>
+      <p><strong>{{ q.get_status_display }}</strong> <small class="muted">{{ q.created_at|date:"Y-m-d H:i" }} UTC</small><br>{{ q.message|linebreaksbr }}</p>
+      {% if q.response %}<p><strong>Organizers:</strong> {{ q.response|linebreaksbr }}</p>{% endif %}
+    </article>
+  {% endfor %}
+  {% if can_query %}
+    <p class="muted">For example: a judge reviewed an older version, or a link was broken during judging. The organizers answer by email.
+      Published results are signed and do not change, but the answer is recorded.</p>
+    <form method="post" action="/projects/{{ report.project.id }}/queries">
+      {% csrf_token %}
+      <label for="message">What is wrong, and how you know</label>
+      <textarea id="message" name="message" rows="3" minlength="20" required></textarea>
+      <button type="submit" class="secondary">Send to the organizers</button>
+    </form>
+  {% endif %}
+</section>
+{% endblock %}
