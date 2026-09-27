@@ -12,7 +12,7 @@ from django.db import transaction
 from django.utils.text import slugify
 
 from apps.accounts.models import RoleGrant, User, normalize_email
-from apps.events import preflight
+from apps.events import hooks, preflight
 from apps.events.models import (
     PHASE_ORDER,
     Criterion,
@@ -449,6 +449,7 @@ def transition(
     )
     event.phase = to_phase
     event.save(update_fields=["phase", "updated_at"])
+    hooks.entered(actor, event, to_phase)
     audit.record(
         "event.phase_changed",
         f"Phase changed from {entry.from_phase} to {to_phase}"

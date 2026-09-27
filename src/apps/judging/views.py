@@ -11,14 +11,14 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from apps.accounts.models import User
 from apps.events import policies as event_policies
 from apps.events.services import get_event
-from apps.judging import close_calls, deliberation, exports, services, snapshots
+from apps.judging import close_calls, deliberation, exports, publishing, services, snapshots
 from apps.judging import results as results_service
 from apps.judging.api import JUDGE_SELF
 from apps.judging.models import Assignment
 from apps.submissions.models import Project
 from core.actions import ui_action
 from core.http import ApiError, not_found
-from core.policy import get_principal, policy
+from core.policy import Rule, define, get_principal, policy
 
 
 @require_GET
@@ -385,3 +385,35 @@ def organizer_snapshot(request: HttpRequest, event_id: str, number: int) -> Http
     filename = f"{event_id}-results-{number}.json"
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
+
+
+PUBLIC_RESULTS = define(
+    "public.results",
+    Rule(public=True, description="Published results, with the method card, for everyone."),
+)
+METHOD_NAMES = {
+    "additive": "Additive judge-bias model",
+    "shrunk_z": "Shrunken z-score",
+    "raw": "Raw average",
+}
+
+
+@require_GET
+@policy(PUBLIC_RESULTS)
+def public_results(request: HttpRequest, event_id: str) -> HttpResponse:
+    event = get_event(event_id)
+    publication = publishing.published(event)
+    if publication is None:
+        raise not_found("Results for this event have not been published.")
+    payload = publication.snapshot.payload
+    prizes = {prize.rank: prize for prize in event.prizes.all()}
+    context = {
+        "event": event,
+        "publication": publication,
+        "snapshot": publication.snapshot,
+        "payload": payload,
+        "method_name": METHOD_NAMES.get(payload["method"], payload["method"]),
+        "prizes": prizes,
+        "names": {row["project"]: row["name"] for row in payload["ranking"]},
+    }
+    return render(request, "judging/public_results.html", context)

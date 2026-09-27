@@ -100,8 +100,8 @@ def build_payload(event: Event, number: int) -> dict[str, Any]:
 
 
 @transaction.atomic
-def freeze(actor: Principal, event: Event) -> ResultsSnapshot:
-    if event.phase not in FREEZE_PHASES:
+def freeze(actor: Principal, event: Event, *, allow_any_phase: bool = False) -> ResultsSnapshot:
+    if event.phase not in FREEZE_PHASES and not allow_any_phase:
         raise conflict(
             "not_deliberation",
             "Freeze results during deliberation, after judging has closed.",

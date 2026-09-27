@@ -8,7 +8,15 @@ from ninja import Field, Router, Schema, Status
 
 from apps.events import policies as event_policies
 from apps.events.services import get_event
-from apps.judging import close_calls, deliberation, exports, repositories, services, snapshots
+from apps.judging import (
+    close_calls,
+    deliberation,
+    exports,
+    publishing,
+    repositories,
+    services,
+    snapshots,
+)
 from apps.judging import results as results_service
 from apps.judging.models import Review
 from core.actions import api_action
@@ -638,3 +646,22 @@ def get_snapshot(request: HttpRequest, event_id: str, number: int) -> dict[str, 
     if item is None:
         raise not_found("No such snapshot.")
     return snapshots.signed_document(item)
+
+
+PUBLIC_RESULTS_API = define(
+    "public.results_document",
+    Rule(public=True, description="The signed results document, once published."),
+)
+
+
+@router.get("/events/{event_id}/results/published")
+@policy(PUBLIC_RESULTS_API)
+def published_results(request: HttpRequest, event_id: str) -> dict[str, Any]:
+    """The published, signed results. Verify it with the key at /.well-known/raptor-desk-key."""
+    publication = publishing.published(get_event(event_id))
+    if publication is None:
+        raise not_found("Results for this event have not been published.")
+    return {
+        **snapshots.signed_document(publication.snapshot),
+        "published_at": publication.published_at.isoformat(),
+    }

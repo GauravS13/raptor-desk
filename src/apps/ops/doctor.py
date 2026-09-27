@@ -36,6 +36,8 @@ GUARD_TRIGGERS = {
     "judging_rankingdecision_no_delete": "deliberation decisions",
     "judging_resultssnapshot_no_update": "results snapshots",
     "judging_resultssnapshot_no_delete": "results snapshots",
+    "judging_publication_no_update": "publications",
+    "judging_publication_no_delete": "publications",
 }
 OUTBOX_OVERDUE = timedelta(minutes=5)
 BACKUP_MAX_AGE = timedelta(hours=24)

@@ -11,6 +11,7 @@
 
 <p>
   <a href="/events/{{ event.id }}/projects" role="button">Browse {{ project_count }} project{{ project_count|pluralize }}</a>
+  {% if event.phase == "published" or event.phase == "archived" %}<a href="/events/{{ event.id }}/results" role="button">Results</a>{% endif %}
   {% if principal.is_authenticated %}
     <a href="/events/{{ event.id }}/team" role="button" class="secondary">{% if my_team %}Your team: {{ my_team.name }}{% else %}Form a team{% endif %}</a>
     {% if my_team and event.submissions_are_open %}<a href="/events/{{ event.id }}/submit" role="button" class="secondary">Your submission</a>{% endif %}

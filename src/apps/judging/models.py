@@ -263,3 +263,17 @@ class ResultsSnapshot(models.Model):
 
     def __str__(self) -> str:
         return f"{self.event_id} results #{self.number}"
+
+
+class Publication(models.Model):
+    """Which signed snapshot was published for an event, and when. One per event, append-only."""
+
+    event = models.OneToOneField(
+        "events.Event", on_delete=models.CASCADE, primary_key=True, related_name="publication"
+    )
+    snapshot = models.ForeignKey(ResultsSnapshot, on_delete=models.PROTECT, related_name="+")
+    published_by_id = models.CharField(max_length=40, blank=True)
+    published_at = models.DateTimeField(default=clock.now)
+
+    def __str__(self) -> str:
+        return f"{self.event_id} published snapshot #{self.snapshot.number}"

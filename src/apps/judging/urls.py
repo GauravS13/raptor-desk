@@ -33,6 +33,7 @@ urlpatterns = [
         name="org-decide",
     ),
     path("o/events/<str:event_id>/results/freeze", views.organizer_freeze, name="org-freeze"),
+    path("events/<str:event_id>/results", views.public_results, name="public-results"),
     path(
         "o/events/<str:event_id>/results/snapshots/<int:number>.json",
         views.organizer_snapshot,

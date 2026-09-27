@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load results_tags %}
+
+{% block title %}Results · {{ event.name }}{% endblock %}
+
+{% block content %}
+<hgroup>
+  <h1>Results: {{ event.name }}</h1>
+  <p>Published {{ publication.published_at|date:"Y-m-d H:i" }} UTC</p>
+</hgroup>
+
+<section aria-labelledby="winners">
+  <h2 id="winners">Prize places</h2>
+  <ol class="winners">
+    {% for row in payload.ranking %}{% if row.place <= payload.prize_places %}
+      <li>
+        <strong><a href="/projects/{{ row.project }}">{{ row.name }}</a></strong> · {{ row.team }}
+        {% with prize=prizes|get_item:row.place %}{% if prize %}<span class="tag">{{ prize.name }}{% if prize.amount %} · {{ prize.amount }}{% endif %}</span>{% endif %}{% endwith %}
+      </li>
+    {% endif %}{% endfor %}
+  </ol>
+</section>
+
+<section aria-labelledby="ranking">
+  <h2 id="ranking">Full ranking</h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th scope="col">Place</th><th scope="col">Project</th><th scope="col">Team</th><th scope="col">Score</th><th scope="col">90% interval</th></tr></thead>
+    <tbody>
+    {% for row in payload.ranking %}
+      <tr{% if row.place == payload.prize_places %} class="prize-line"{% endif %}>
+        <td>{{ row.place }}</td>
+        <td><a href="/projects/{{ row.project }}">{{ row.name }}</a></td>
+        <td>{{ row.team }}</td>
+        <td>{{ row.score|floatformat:2 }}</td>
+        <td>{{ row.ci.0|floatformat:2 }}–{{ row.ci.1|floatformat:2 }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% if payload.gated_out %}<p class="muted">Not ranked because they did not pass a required criterion: {{ payload.gated_out|join:", " }}.</p>{% endif %}
+</section>
+
+{% if payload.decisions %}
+<section aria-labelledby="decisions">
+  <h2 id="decisions">Decided by the organizers</h2>
+  <p class="muted">Where the evidence did not settle a place, people decided, and wrote down why.</p>
+  <ul>
+    {% for d in payload.decisions %}
+      <li>{% if d.kind == "place_above" %}<strong>{{ names|get_item:d.project|default:d.project }}</strong> placed above <strong>{{ names|get_item:d.other|default:d.other }}</strong>{% else %}<strong>{{ names|get_item:d.project|default:d.project }}</strong> confirmed at its computed place{% endif %}: {{ d.rationale }}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<article class="method-card" aria-labelledby="method">
+  <header><strong id="method">How these results were made</strong></header>
+  <dl>
+    <dt>Method</dt>
+    <dd>{{ method_name }}. Every judge's scores are combined with the published rubric weights. The model then estimates each
+      project's quality and each judge's leniency together, so no project gains or loses from which judges it drew. A judge
+      who gave identical scores to everything is left out of the fit.</dd>
+    <dt>Evidence</dt>
+    <dd>{{ payload.reviews }} reviews by {{ payload.judges }} judges.</dd>
+    <dt>Uncertainty</dt>
+    <dd>The interval is the range the score falls in across {{ payload.params.bootstrap|floatformat:0 }} resamples of the reviews
+      (seed {{ payload.params.seed|floatformat:0 }}). Places whose order the data did not settle were decided by the organizers, above.</dd>
+    <dt>Parameters</dt>
+    <dd>shrinkage k = {{ payload.params.k }}, ridge &lambda; = {{ payload.params.lambda }}</dd>
+    <dt>Snapshot</dt>
+    <dd>#{{ payload.number }}, frozen {{ snapshot.created_at|date:"Y-m-d H:i" }} UTC. SHA-256 <code>{{ snapshot.payload_hash }}</code></dd>
+    <dt>Signature</dt>
+    <dd>Ed25519, key <code>{{ snapshot.key_id }}</code>. The signed document is at
+      <a href="/api/events/{{ event.id }}/results/published">/api/events/{{ event.id }}/results/published</a>,
+      and the public key at <a href="/.well-known/raptor-desk-key">/.well-known/raptor-desk-key</a>.
+      The signature covers the payload serialised as JSON with sorted keys, no spaces and UTF-8.</dd>
+  </dl>
+</article>
+{% endblock %}
