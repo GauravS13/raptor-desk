@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.python-cache/
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+coverage.xml
+htmlcov/
+.import_linter_cache/
+
+# Runtime data (database, signing keys, uploads) lives in the Docker volume
+/data/runtime/
+*.sqlite3
+*.sqlite3-*
+keys/
+*.pem
+
+# Django
+/src/staticfiles/
+
+# Editors and OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Local environment overrides
+.env

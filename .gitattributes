@@ -1,0 +1,23 @@
+# Normalise line endings to LF in the repository and working tree.
+# Shell scripts run inside Linux containers and break with CRLF.
+* text=auto eol=lf
+
+*.sh text eol=lf
+*.py text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.sqlite3 binary
