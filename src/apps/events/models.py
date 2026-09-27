@@ -267,3 +267,39 @@ class PhaseTransition(models.Model):
 
     def __str__(self) -> str:
         return f"{self.event_id}: {self.from_phase} -> {self.to_phase}"
+
+
+def _artifact_id() -> str:
+    return new_id("art")
+
+
+class ArtifactKind(models.TextChoices):
+    FILE = "file", "File upload"
+    URL = "url", "Link"
+    TEXT = "text", "Text"
+
+
+class RequiredArtifact(models.Model):
+    """Something every submission must provide, e.g. an acceptance report or a demo video.
+
+    ``parser`` names a reader that turns the upload into structured claims, so
+    judges see "claimed vs verified" instead of reading raw files.
+    """
+
+    id = models.CharField(primary_key=True, max_length=40, default=_artifact_id, editable=False)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="required_artifacts")
+    key = models.SlugField(max_length=60)
+    label = models.CharField(max_length=160)
+    kind = models.CharField(max_length=10, choices=ArtifactKind.choices, default=ArtifactKind.FILE)
+    parser = models.CharField(max_length=60, blank=True)
+    required = models.BooleanField(default=True)
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering: ClassVar[list[str]] = ["order", "key"]
+        constraints: ClassVar[list[models.BaseConstraint]] = [
+            models.UniqueConstraint(fields=["event", "key"], name="artifact_key_unique_per_event")
+        ]
+
+    def __str__(self) -> str:
+        return self.label

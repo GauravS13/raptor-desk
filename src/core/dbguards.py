@@ -57,3 +57,35 @@ def append_only(table: str) -> tuple[Callable[..., None], Callable[..., None]]:
             schema_editor.execute(statement)
 
     return forward, reverse
+
+
+def frozen_after(table: str, column: str) -> tuple[Callable[..., None], Callable[..., None]]:
+    """Reject UPDATEs to rows whose ``column`` is set (e.g. a submitted version)."""
+    name = f"{table}_frozen_after_{column}"
+
+    def forward(apps: Any, schema_editor: BaseDatabaseSchemaEditor) -> None:
+        if schema_editor.connection.vendor == "sqlite":
+            schema_editor.execute(
+                f"CREATE TRIGGER IF NOT EXISTS {name} BEFORE UPDATE ON {table} "
+                f"WHEN OLD.{column} IS NOT NULL "
+                f"BEGIN SELECT RAISE(ABORT, '{table} rows are immutable once {column} is set'); END;"
+            )
+        else:
+            schema_editor.execute(
+                f"CREATE OR REPLACE FUNCTION {name}_fn() RETURNS trigger AS $$ "
+                f"BEGIN IF OLD.{column} IS NOT NULL THEN "
+                f"RAISE EXCEPTION '% rows are immutable once {column} is set', TG_TABLE_NAME; "
+                "END IF; RETURN NEW; END; $$ LANGUAGE plpgsql;"
+            )
+            schema_editor.execute(
+                f"CREATE TRIGGER {name} BEFORE UPDATE ON {table} "
+                f"FOR EACH ROW EXECUTE FUNCTION {name}_fn();"
+            )
+
+    def reverse(apps: Any, schema_editor: BaseDatabaseSchemaEditor) -> None:
+        if schema_editor.connection.vendor == "sqlite":
+            schema_editor.execute(f"DROP TRIGGER IF EXISTS {name};")
+        else:
+            schema_editor.execute(f"DROP TRIGGER IF EXISTS {name} ON {table};")
+
+    return forward, reverse

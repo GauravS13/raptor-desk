@@ -79,6 +79,7 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.events",
     "apps.teams",
+    "apps.submissions",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -155,6 +156,12 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+# Uploaded files (thumbnails, images, artifacts) live in the data volume.
+MEDIA_ROOT = DATA_DIR / "media"
+MEDIA_URL = "/media/"
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
