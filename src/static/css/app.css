@@ -216,3 +216,28 @@ form.inline button {
 tr.under td {
   font-weight: 600;
 }
+
+.up {
+  color: var(--pico-ins-color);
+}
+
+.down {
+  color: var(--pico-del-color);
+}
+
+.inline-form {
+  display: flex;
+  gap: 0.75rem;
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.inline-form select,
+.inline-form button {
+  width: auto;
+  margin-bottom: 0;
+}
+
+table.results td {
+  white-space: nowrap;
+}

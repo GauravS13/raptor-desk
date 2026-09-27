@@ -11,6 +11,7 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from apps.events import policies as event_policies
 from apps.events.services import get_event
 from apps.judging import exports, services
+from apps.judging import results as results_service
 from apps.judging.api import JUDGE_SELF
 from apps.judging.models import Assignment
 from apps.submissions.models import Project
@@ -247,3 +248,30 @@ def organizer_export_csv(request: HttpRequest, event_id: str, kind: str) -> Http
     response = HttpResponse(export(event), content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = f'attachment; filename="{event.slug}-{kind}.csv"'
     return response
+
+
+@require_GET
+@policy(event_policies.EVENTS_MANAGE)
+def organizer_results(request: HttpRequest, event_id: str) -> HttpResponse:
+    event = get_event(event_id)
+    method = request.GET.get("method", "additive")
+    computed = results_service.compute(event, method=method)
+    rows = results_service.as_rows(computed)
+    judges = sorted(computed.evaluation.judges, key=lambda j: j.severity)
+    context = {
+        "event": event,
+        "tab": "results",
+        "method": computed.method,
+        "methods": [
+            ("additive", "Additive judge-bias model"),
+            ("shrunk_z", "Shrunken z-score"),
+            ("raw", "Raw average"),
+        ],
+        "rows": rows,
+        "cutoffs": computed.evaluation.cutoffs,
+        "flags": computed.evaluation.flags,
+        "params": computed.evaluation.params,
+        "judges": judges,
+        "gated_out": computed.gated_out,
+    }
+    return render(request, "judging/results.html", context)

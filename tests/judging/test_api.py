@@ -85,7 +85,10 @@ def test_results_csv_for_the_organizer(seeded: None) -> None:
     assert "," in text.splitlines()[0]
     rows = list(csv.DictReader(io.StringIO(text)))
     assert len(rows) == 40
-    assert rows[0]["raw_rank"] == "1"
+    assert rows[0]["rank"] == "1"
+    assert rows[0]["project_id"] == "prj_34"
+    assert rows[0]["method"] == "additive"
+    assert {"raw_mean", "shrunk_z", "additive", "movement", "p_top5", "flags"} <= set(rows[0])
 
 
 def test_every_export_is_valid_csv(seeded: None) -> None:
@@ -106,3 +109,30 @@ def test_csv_cells_cannot_run_formulas() -> None:
     assert safe('=HYPERLINK("http://evil")') == '\'=HYPERLINK("http://evil")'
     assert safe("+1") == "'+1"
     assert safe("Solid.") == "Solid."
+
+
+def test_results_api_is_organizer_only_and_explains_itself(seeded: None) -> None:
+    body = get("/api/events/evt_01/results", "organizer").json()
+    assert body["method"] == "additive"
+    assert [p["project_id"] for p in body["projects"][:2]] == ["prj_34", "prj_11"]
+    prj_10 = next(p for p in body["projects"] if p["project_id"] == "prj_10")
+    assert prj_10["raw_rank"] == 3 and prj_10["movement"] < 0
+    assert any(j["judge"] == "jdg_07" and j["flat"] for j in body["judges"])
+    assert "method_disagreement_top3" in body["flags"]
+    # Aggregates are hidden from judges and participants.
+    assert get("/api/events/evt_01/results", "judge_a").status_code == 403
+    assert get("/api/events/evt_01/results", "participant").status_code == 403
+    assert get("/api/events/evt_01/results", None).status_code == 401
+
+
+def test_results_page_for_the_organizer(seeded: None) -> None:
+    client = Client()
+    from apps.accounts.models import User as UserModel
+
+    client.force_login(UserModel.objects.get(email="organizer@raptor-desk.local"))
+    page = client.get("/o/events/evt_01/results")
+    assert page.status_code == 200
+    assert b"Judge diagnostics" in page.content
+    assert b"close call" in page.content
+    raw = client.get("/o/events/evt_01/results?method=raw")
+    assert raw.status_code == 200

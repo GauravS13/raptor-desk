@@ -9,6 +9,7 @@ from ninja import Router, Schema, Status
 from apps.events import policies as event_policies
 from apps.events.services import get_event
 from apps.judging import exports, repositories, services
+from apps.judging import results as results_service
 from apps.judging.models import Review
 from core.actions import api_action
 from core.http import not_found
@@ -371,3 +372,63 @@ def save_review(request: HttpRequest, assignment_id: str, payload: ReviewIn) -> 
         active_seconds=payload.active_seconds,
     )
     return assignment_detail(services.own_assignment(principal, assignment_id))
+
+
+# --- Results (organizers only: judges never see aggregates) -----------------------
+
+
+class ProjectResultOut(Schema):
+    rank: int
+    project_id: str
+    project: str
+    team: str
+    reviews: int
+    informative_reviews: int
+    raw: float
+    raw_rank: int
+    shrunk_z: float
+    additive: float
+    score: float
+    movement: int
+    ci_low: float
+    ci_high: float
+    p_top: dict[int, float]
+    bonus: float
+    flags: list[str]
+
+
+class JudgeDiagnosticsOut(Schema):
+    judge: str
+    n: int
+    mean: float
+    spread: float
+    severity: float
+    flat: bool
+    low_n: bool
+    misfit: float
+
+
+class ResultsOut(Schema):
+    event_id: str
+    method: str
+    params: dict[str, float]
+    flags: list[str]
+    projects: list[ProjectResultOut]
+    gated_out: list[str]
+    judges: list[JudgeDiagnosticsOut]
+
+
+@router.get("/events/{event_id}/results", response=ResultsOut)
+@policy(event_policies.EVENTS_MANAGE)
+def event_results(request: HttpRequest, event_id: str, method: str = "additive") -> ResultsOut:
+    """Normalized results with uncertainty. Organizers and admins only."""
+    computed = results_service.compute(get_event(event_id), method=method)
+    return ResultsOut(
+        event_id=event_id,
+        method=computed.method,
+        params=computed.evaluation.params,
+        flags=computed.evaluation.flags,
+        projects=[ProjectResultOut(**row) for row in results_service.as_rows(computed)],
+        gated_out=computed.gated_out,
+        judges=[JudgeDiagnosticsOut(**j.__dict__) for j in computed.evaluation.judges],
+    )

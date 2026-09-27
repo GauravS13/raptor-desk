@@ -20,6 +20,7 @@ urlpatterns = [
         views.organizer_conflict,
         name="org-judging-conflict",
     ),
+    path("o/events/<str:event_id>/results", views.organizer_results, name="org-results"),
     path("o/events/<str:event_id>/exports", views.organizer_exports, name="org-exports"),
     path(
         "o/events/<str:event_id>/exports/<str:kind>.csv",

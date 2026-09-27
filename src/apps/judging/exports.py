@@ -7,13 +7,12 @@ anything when an organizer opens it.
 
 import csv
 import io
-from collections import defaultdict
 from collections.abc import Iterable, Iterator
-from statistics import mean
 
 from apps.accounts.models import RoleGrant
 from apps.events.models import Event
 from apps.judging import repositories
+from apps.judging import results as results_service
 from apps.judging.models import Assignment
 from apps.judging.scoring import engine_criteria, latest_reviews, review_scores, score_map
 from apps.submissions.models import Project
@@ -38,35 +37,73 @@ def to_csv(header: list[str], rows: Iterable[Iterable[object]]) -> str:
 
 
 def results(event: Event) -> str:
-    """Projects with review counts and raw weighted means (normalized columns come with results)."""
-    reviews = list(repositories.reviews_for_organizer(event.pk))
-    scores = review_scores(event, reviews)
-    by_project: dict[str, list[float]] = defaultdict(list)
-    judges: dict[str, set[str]] = defaultdict(set)
-    for score in scores:
-        judges[score.project_id].add(score.judge_id)
-        if score.composite is not None:
-            by_project[score.project_id].append(score.composite)
-    projects = Project.objects.filter(event=event, status="submitted").select_related(
-        "team", "track", "canonical_version"
-    )
-    rows = []
-    for project in projects:
-        values = by_project.get(project.pk, [])
-        rows.append(
-            (
-                project.pk,
-                project.canonical_version.name if project.canonical_version else "",
-                project.team.name,
-                project.track.name if project.track else "",
-                len(judges.get(project.pk, set())),
-                f"{mean(values):.4f}" if values else "",
-            )
+    """Ranked results: raw, shrunk z and additive scores, movement, 90% interval, P(top-k)."""
+    computed = results_service.compute(event)
+    cutoffs = computed.evaluation.cutoffs
+    header = [
+        "rank",
+        "project_id",
+        "project",
+        "team",
+        "reviews",
+        "informative_reviews",
+        "raw_mean",
+        "raw_rank",
+        "shrunk_z",
+        "additive",
+        "movement",
+        "ci90_low",
+        "ci90_high",
+        *[f"p_top{c}" for c in cutoffs],
+        "bonus_tiebreak",
+        "flags",
+        "method",
+    ]
+    rows = [
+        (
+            row["rank"],
+            row["project_id"],
+            row["project"],
+            row["team"],
+            row["reviews"],
+            row["informative_reviews"],
+            f"{row['raw']:.4f}",
+            row["raw_rank"],
+            f"{row['shrunk_z']:.4f}",
+            f"{row['additive']:.4f}",
+            row["movement"],
+            f"{row['ci_low']:.4f}",
+            f"{row['ci_high']:.4f}",
+            *[f"{row['p_top'][c]:.3f}" for c in cutoffs],
+            f"{row['bonus']:.2f}",
+            ";".join(row["flags"]),
+            computed.method,
         )
-    rows.sort(key=lambda row: (-(float(row[5]) if row[5] else -1), row[0]))
-    ranked = [(index, *row) for index, row in enumerate(rows, start=1)]
-    header = ["raw_rank", "project_id", "project", "team", "track", "reviews", "raw_mean"]
-    return to_csv(header, ranked)
+        for row in results_service.as_rows(computed)
+    ]
+    gated = [
+        (
+            "",
+            pid,
+            computed.names.get(pid, pid),
+            computed.teams.get(pid, ""),
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            *["" for _ in cutoffs],
+            "",
+            "gate_not_passed",
+            computed.method,
+        )
+        for pid in computed.gated_out
+    ]
+    return to_csv(header, [*rows, *gated])
 
 
 def reviews_csv(event: Event) -> str:
