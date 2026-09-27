@@ -21,8 +21,8 @@
       <ul>
         {% block nav %}{% endblock %}
         {% if principal.is_authenticated %}
-          <li><a href="/judge">Judge</a></li>
-          <li><a href="/o/">Organize</a></li>
+          {% if nav_judge %}<li><a href="/judge">Judge</a></li>{% endif %}
+          {% if nav_organize %}<li><a href="/o/">Organize</a></li>{% endif %}
           <li><span class="muted">{{ principal.email }}</span></li>
           <li>
             <form method="post" action="/logout" class="inline">

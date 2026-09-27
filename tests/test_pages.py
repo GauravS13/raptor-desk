@@ -39,3 +39,22 @@ def test_templates_use_no_inline_styles_or_handlers() -> None:
         if inline.search(path.read_text(encoding="utf-8"))
     ]
     assert offenders == []
+
+
+@pytest.mark.django_db
+def test_the_menu_only_offers_consoles_the_person_can_use(client) -> None:
+    from apps.accounts.models import RoleGrant, User
+    from apps.events.models import Event
+
+    event = Event.objects.create(slug="menu", name="Menu test")
+    participant = User.objects.create_user("p@example.org", "pw-123456789")
+    RoleGrant.objects.create(user=participant, event=event, role="participant")
+    judge = User.objects.create_user("j@example.org", "pw-123456789")
+    RoleGrant.objects.create(user=judge, event=event, role="judge")
+
+    client.force_login(participant)
+    page = client.get("/").content.decode()
+    assert 'href="/judge"' not in page and 'href="/o/"' not in page
+    client.force_login(judge)
+    page = client.get("/").content.decode()
+    assert 'href="/judge"' in page and 'href="/o/"' not in page
