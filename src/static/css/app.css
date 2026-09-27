@@ -166,3 +166,53 @@ form.inline button {
 .facts dd {
   margin: 0;
 }
+
+.review-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .review-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.criterion {
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+  padding: 0.75rem 1rem;
+}
+
+.criterion:focus-within {
+  outline: 2px solid var(--pico-primary);
+}
+
+.levels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin: 0.5rem 0;
+}
+
+.level {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.anchors {
+  font-size: 0.85rem;
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.compact li {
+  font-size: 0.9rem;
+}
+
+tr.under td {
+  font-weight: 600;
+}

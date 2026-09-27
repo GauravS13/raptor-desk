@@ -20,6 +20,7 @@
       <ul>
         {% block nav %}{% endblock %}
         {% if principal.is_authenticated %}
+          <li><a href="/judge">Judge</a></li>
           <li><a href="/o/">Organize</a></li>
           <li><span class="muted">{{ principal.email }}</span></li>
           <li>

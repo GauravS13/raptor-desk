@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Judging · {{ event.name }}{% endblock %}
+
+{% block content %}
+{% include "events/_event_header.html" %}
+
+<section aria-labelledby="progress">
+  <h2 id="progress">Judge progress</h2>
+  <p>
+    <span class="tag">not started: {{ progress.totals.not_started }}</span>
+    <span class="tag">in progress: {{ progress.totals.in_progress }}</span>
+    <span class="tag">done: {{ progress.totals.done }}</span>
+    <span class="tag">overdue: {{ progress.totals.overdue }}</span>
+    <span class="tag">no assignments: {{ progress.totals.unassigned }}</span>
+  </p>
+  <p><a href="/o/events/{{ event.id }}/exports">CSV exports</a></p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">Judge</th><th scope="col">State</th><th scope="col">Done</th><th scope="col">Drafts</th><th scope="col">Last activity (UTC)</th></tr></thead>
+      <tbody>
+      {% for j in progress.judges %}
+        <tr class="state-{{ j.state }}">
+          <td>{{ j.name|default:j.email }} <small class="muted">{{ j.judge_id }}</small></td>
+          <td>{{ j.state|cut:"_" }}</td>
+          <td>{{ j.submitted }} / {{ j.assigned }}</td>
+          <td>{{ j.drafts }}</td>
+          <td>{{ j.last_activity|date:"Y-m-d H:i"|default:"—" }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="coverage">
+  <h2 id="coverage">Review coverage</h2>
+  <p class="muted">Projects below the target of {{ event.reviews_per_project }} reviews are listed first.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">Project</th><th scope="col">Reviews</th></tr></thead>
+      <tbody>
+      {% for c in progress.coverage|dictsort:"reviews" %}
+        <tr {% if c.reviews < c.needed %}class="under"{% endif %}>
+          <td>{{ c.project }} <small class="muted">{{ c.project_id }}</small></td>
+          <td>{{ c.reviews }} / {{ c.needed }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="assign">
+  <h2 id="assign">Assign judges</h2>
+  <div class="grid">
+    <article>
+      <header><strong>Planned assignment</strong></header>
+      <p>Fills every project up to {{ event.reviews_per_project }} reviews, within each judge's tracks and a load of {{ event.max_load_per_judge }}, avoiding conflicts. Proposals stay private until you publish them.</p>
+      <form method="post" action="/o/events/{{ event.id }}/judging/plan">{% csrf_token %}<button type="submit">Propose assignments</button></form>
+      {% if proposed %}
+        <p>{{ proposed|length }} proposed:</p>
+        <ul class="compact">{% for a in proposed|slice:":25" %}<li>{{ a.judge.name|default:a.judge_id }} → {{ a.project_id }} <small class="muted">{{ a.reason }}</small></li>{% endfor %}</ul>
+        <form method="post" action="/o/events/{{ event.id }}/judging/publish">{% csrf_token %}<button type="submit">Publish {{ proposed|length }} proposals</button></form>
+      {% endif %}
+    </article>
+    <article>
+      <header><strong>Assign by hand</strong></header>
+      <form method="post" action="/o/events/{{ event.id }}/judging/assign">
+        {% csrf_token %}
+        {{ batch_form.as_div }}
+        <button type="submit" class="secondary">Assign</button>
+      </form>
+    </article>
+  </div>
+</section>
+
+<section aria-labelledby="conflicts">
+  <h2 id="conflicts">Conflicts of interest</h2>
+  <form method="post" action="/o/events/{{ event.id }}/judging/conflict">
+    {% csrf_token %}
+    {{ conflict_form.as_div }}
+    <button type="submit" class="secondary">Record conflict</button>
+  </form>
+</section>
+{% endblock %}

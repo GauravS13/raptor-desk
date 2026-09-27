@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Exports · {{ event.name }}{% endblock %}
+
+{% block content %}
+{% include "events/_event_header.html" %}
+<p>Every stage of the event as CSV. The first line of each file is a header, and cells are
+protected against spreadsheet formula injection. The same files are available from the API at
+<code>/api/events/{{ event.id }}/exports/&lt;kind&gt;.csv</code>.</p>
+<ul>
+  {% for kind in kinds %}<li><a href="/o/events/{{ event.id }}/exports/{{ kind }}.csv">{{ kind }}.csv</a></li>{% endfor %}
+</ul>
+{% endblock %}

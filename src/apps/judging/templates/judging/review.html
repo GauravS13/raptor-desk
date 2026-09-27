@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Review {{ version.name }} · Raptor Desk{% endblock %}
+
+{% block content %}
+<p><a href="/judge">← Your reviews</a></p>
+<div class="review-split">
+  <section aria-labelledby="project-heading" class="review-project">
+    <hgroup>
+      <h1 id="project-heading">{{ version.name }}</h1>
+      <p>{{ version.tagline }}</p>
+    </hgroup>
+    <p class="muted">
+      {% if not blind %}{{ item.project.team.name }} · {% endif %}{% if item.project.track %}{{ item.project.track.name }} · {% endif %}version {{ version.n }}
+    </p>
+    {% if version.description %}<p>{{ version.description|linebreaksbr }}</p>{% endif %}
+    <ul>
+      {% if version.repo_url %}<li><a href="{{ version.repo_url }}" rel="noopener noreferrer" target="_blank">Repository</a></li>{% endif %}
+      {% if version.video_url %}<li><a href="{{ version.video_url }}" rel="noopener noreferrer" target="_blank">Demo video</a></li>{% endif %}
+      {% if version.live_url %}<li><a href="{{ version.live_url }}" rel="noopener noreferrer" target="_blank">Live link</a></li>{% endif %}
+    </ul>
+    {% if blind %}<p class="muted">Blind judging: team identities are hidden.</p>{% endif %}
+  </section>
+
+  <section aria-labelledby="rubric-heading" class="review-rubric">
+    <h2 id="rubric-heading">Your scores</h2>
+    {% if error %}<p class="notice error" role="alert">{{ error }}</p>{% endif %}
+    {% if review.status == "submitted" %}<p class="notice success">Submitted. You can amend it while judging is open.</p>{% endif %}
+    {% if open %}
+    <form method="post" action="/judge/review/{{ item.id }}" id="review-form" data-review-form>
+      {% csrf_token %}
+      <input type="hidden" name="active_seconds" value="0" data-active-seconds>
+      {% for row in rows %}
+        <fieldset class="criterion" data-criterion>
+          <legend>{{ row.criterion.label }}{% if row.criterion.is_bonus %} <small>(tie-break only)</small>{% elif row.criterion.is_gate %} <small>(gate)</small>{% endif %}</legend>
+          {% if row.criterion.description %}<small class="muted">{{ row.criterion.description }}</small>{% endif %}
+          <div class="levels" role="radiogroup">
+            {% for level in row.levels %}
+              <label class="level">
+                <input type="radio" name="c_{{ row.criterion.key }}" value="{{ level }}" {% if row.value == level %}checked{% endif %}>
+                {{ level }}
+              </label>
+            {% endfor %}
+          </div>
+          {% if row.anchors %}
+            <ul class="anchors">{% for level, text in row.anchors %}<li><strong>{{ level }}</strong>: {{ text }}</li>{% endfor %}</ul>
+          {% endif %}
+        </fieldset>
+      {% endfor %}
+      <label for="comment">Feedback for the team (required to submit)</label>
+      <textarea id="comment" name="comment" rows="4">{{ review.comment|default:"" }}</textarea>
+      <label for="improvement">One thing they should do next</label>
+      <textarea id="improvement" name="improvement" rows="2">{{ review.improvement|default:"" }}</textarea>
+      <p class="muted"><small>Keyboard: focus a criterion and press a number to score it. Ctrl+Enter submits.</small></p>
+      <div class="grid">
+        <button type="submit" name="save" class="secondary">Save draft</button>
+        <button type="submit" name="submit" data-submit>Submit review</button>
+      </div>
+    </form>
+    {% else %}
+      <p class="notice">Judging is not open, so reviews cannot be changed.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

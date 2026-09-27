@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Your reviews · Raptor Desk{% endblock %}
+
+{% block content %}
+<hgroup>
+  <h1>Your reviews</h1>
+  <p>Projects are listed in an order drawn at random for you, so position does not bias your scores.</p>
+</hgroup>
+{% for group in groups %}
+<section aria-labelledby="ev-{{ group.event.id }}">
+  <h2 id="ev-{{ group.event.id }}">{{ group.event.name }}</h2>
+  <progress value="{{ group.done }}" max="{{ group.items|length }}" aria-label="Reviews done">{{ group.done }} of {{ group.items|length }}</progress>
+  <p class="muted">{{ group.done }} of {{ group.items|length }} done{% if group.event.judging_closes_at %} · judging closes {{ group.event.judging_closes_at|date:"Y-m-d H:i" }} UTC{% endif %}</p>
+  <ol>
+    {% for item in group.items %}
+      <li>
+        <a href="/judge/review/{{ item.id }}">{{ item.project.canonical_version.name }}</a>
+        {% if item.project.track %}<span class="muted"> · {{ item.project.track.name }}</span>{% endif %}
+        {% if item.status == "done" %}<span class="tag">done</span>{% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+</section>
+{% empty %}
+<p>You have no projects to review yet.</p>
+{% endfor %}
+{% endblock %}
