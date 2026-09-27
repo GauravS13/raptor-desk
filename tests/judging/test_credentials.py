@@ -125,3 +125,23 @@ def test_judges_find_their_documents_in_their_queue(event: Event) -> None:
     assert "Your signed documents" in page
     protocol = next(c for c in listed if c["kind"] == "protocol")
     assert protocol["number"] in client.get(f"/judge/protocols/{protocol['code']}").content.decode()
+
+
+def test_anyone_can_check_a_pasted_document(event: Event) -> None:
+    import json
+
+    _publish(event)
+    document = credentials.signed_document(Credential.objects.filter(kind="certificate").first())
+    client = Client()
+    genuine = client.post("/api/verify", document, content_type="application/json").json()
+    assert genuine["valid"] is True and genuine["kind"] == "raptor-desk/judging-certificate"
+    ok = client.post("/verify", {"document": json.dumps(document)}).content.decode()
+    assert "Genuine." in ok
+    document["payload"]["projects_reviewed"] = 99
+    bad = client.post("/verify", {"document": json.dumps(document)}).content.decode()
+    assert "Not genuine." in bad and "changed" in bad
+    assert "not JSON" in client.post("/verify", {"document": "{nope"}).content.decode()
+    api = client.post("/api/verify", document, content_type="application/json").json()
+    assert api["valid"] is False
+    code = Credential.objects.filter(kind="certificate").first().code
+    assert client.get(f"/verify?code={code}")["Location"] == f"/verify/{code}"

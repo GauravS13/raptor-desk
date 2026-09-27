@@ -245,3 +245,18 @@ def public_record(code: str) -> Credential:
 def verify(document: dict[str, Any]) -> bool:
     """Intact and signed by this deployment (see ``core.signing.check_document``)."""
     return signing.check_document(document) == ""
+
+
+def describe(document: dict[str, Any]) -> dict[str, str]:
+    """Check any signed document from this portal and say what it is, in words."""
+    reason = signing.check_document(document)
+    payload = document.get("payload") if isinstance(document, dict) else None
+    payload = payload if isinstance(payload, dict) else {}
+    event = payload.get("event") if isinstance(payload.get("event"), dict) else {}
+    return {
+        "valid": "yes" if not reason else "no",
+        "reason": reason or "intact, and signed by this deployment's key",
+        "kind": str(payload.get("kind", "")),
+        "number": str(payload.get("number", "")),
+        "event": str(event.get("name", "")),
+    }

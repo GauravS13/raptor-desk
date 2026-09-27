@@ -1,5 +1,6 @@
 """Judge console pages and the organizer's judging page."""
 
+import json
 from typing import Any
 
 from django import forms
@@ -549,3 +550,26 @@ def passport_toggle(request: HttpRequest) -> HttpResponse:
 def passport_page(request: HttpRequest, judge_id: str) -> HttpResponse:
     user, items = passport.passport(judge_id)
     return render(request, "judging/passport.html", {"judge": user, "items": items})
+
+
+MAX_DOCUMENT = 2_000_000
+
+
+@require_http_methods(["GET", "POST"])
+@policy(PUBLIC_VERIFY)
+def verify_form(request: HttpRequest) -> HttpResponse:
+    """Check a code, or a pasted signed document, without installing anything."""
+    code = request.GET.get("code", "").strip()
+    if code:
+        return HttpResponseRedirect(f"/verify/{code}")
+    result = None
+    if request.method == "POST":
+        text = request.POST.get("document", "")
+        if len(text) > MAX_DOCUMENT:
+            result = {"valid": "no", "reason": "the document is too large to check here"}
+        else:
+            try:
+                result = credentials.describe(json.loads(text))
+            except ValueError:
+                result = {"valid": "no", "reason": "that is not JSON"}
+    return render(request, "judging/verify_form.html", {"result": result})

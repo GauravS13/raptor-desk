@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Verify a document · Raptor Desk{% endblock %}
+
+{% block content %}
+<hgroup>
+  <h1>Verify a document</h1>
+  <p>Check a certificate, participation record, judge protocol or published result issued by this Raptor Desk.</p>
+</hgroup>
+
+{% if result %}
+  {% if result.valid == "yes" %}
+    <p class="notice success" role="status"><strong>Genuine.</strong> {{ result.reason|capfirst }}.
+      {% if result.kind %}<br>{{ result.kind }} {{ result.number }}{% if result.event %} · {{ result.event }}{% endif %}{% endif %}</p>
+  {% else %}
+    <p class="notice error" role="alert"><strong>Not genuine.</strong> {{ result.reason|capfirst }}.</p>
+  {% endif %}
+{% endif %}
+
+<form method="get" action="/verify">
+  <label for="code">Certificate or record code</label>
+  <input id="code" name="code" type="text" autocomplete="off" placeholder="for example Ab3dE-9xYz12">
+  <button type="submit" class="secondary">Look it up</button>
+</form>
+
+<form method="post" action="/verify">
+  {% csrf_token %}
+  <label for="document">Or paste a signed JSON document</label>
+  <textarea id="document" name="document" rows="8" required></textarea>
+  <button type="submit">Check the signature</button>
+</form>
+
+<p class="muted">A document is genuine when its content matches its SHA-256 and the Ed25519 signature was made with this
+  deployment's key, published at <a href="/.well-known/raptor-desk-key">/.well-known/raptor-desk-key</a>. To check offline,
+  use <code>python3 tools/verify.py document.json --portal &lt;this portal's address&gt;</code> from the repository.</p>
+{% endblock %}

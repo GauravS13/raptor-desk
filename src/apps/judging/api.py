@@ -910,3 +910,25 @@ def get_passport(request: HttpRequest, judge_id: str) -> PassportOut:
             for item in items
         ],
     )
+
+
+class DocumentCheckOut(Schema):
+    valid: bool
+    reason: str
+    kind: str
+    number: str
+    event: str
+
+
+class SignedDocumentIn(Schema):
+    payload: dict[str, Any]
+    payload_hash: str = ""
+    signature: dict[str, Any] = Field(default_factory=dict)
+
+
+@router.post("/verify", response=DocumentCheckOut)
+@policy(PUBLIC_VERIFY)
+def verify_document(request: HttpRequest, document: SignedDocumentIn) -> DocumentCheckOut:
+    """Check any signed document from this portal: snapshot, protocol, certificate or record."""
+    result = credentials.describe(document.dict())
+    return DocumentCheckOut(**{**result, "valid": result["valid"] == "yes"})

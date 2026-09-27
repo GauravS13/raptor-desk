@@ -36,6 +36,7 @@ urlpatterns = [
     path("events/<str:event_id>/results", views.public_results, name="public-results"),
     path("judge/protocols/<str:code>", views.protocol_page, name="protocol"),
     path("judge/protocols/<str:code>.json", views.protocol_json, name="protocol-json"),
+    path("verify", views.verify_form, name="verify"),
     path("verify/<str:code>", views.verify_page, name="verify-record"),
     path("judge/passport", views.passport_toggle, name="passport-toggle"),
     path("judges/<str:judge_id>/passport", views.passport_page, name="passport"),
