@@ -35,9 +35,11 @@ def _module_of(callback: Any) -> str:
 
 
 def unguarded_routes() -> list[str]:
+    # Resolve the URLconf first: importing view modules is what defines their rules.
+    routes = list(iter_url_patterns(get_resolver().url_patterns))
     known = registry()
     problems: list[str] = []
-    for route, callback in iter_url_patterns(get_resolver().url_patterns):
+    for route, callback in routes:
         if route.startswith(EXEMPT_PREFIXES):
             continue
         # Ninja dispatchers and its public OpenAPI schema and docs pages.

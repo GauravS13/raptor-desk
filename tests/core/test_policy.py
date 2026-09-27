@@ -93,3 +93,21 @@ def test_api_ignores_browser_session_cookie() -> None:
     client = Client()
     assert client.login(email="judge@example.org", password="a-long-password-123")
     assert client.get("/api/me").status_code == 401
+
+
+def test_system_check_passes_in_a_fresh_process() -> None:
+    """Regression: the check must import the URLconf before reading the rule registry."""
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    src = Path(__file__).resolve().parents[2] / "src"
+    result = subprocess.run(
+        [sys.executable, "manage.py", "check", "--fail-level", "ERROR"],
+        cwd=src,
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
