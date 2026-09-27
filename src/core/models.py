@@ -74,3 +74,14 @@ class OutboxMessage(models.Model):
         if self.failed_at:
             return "failed"
         return "pending"
+
+
+class RateBucket(models.Model):
+    """A fixed-window request counter shared by every web process (no Redis needed)."""
+
+    key = models.CharField(primary_key=True, max_length=200)
+    window_start = models.DateTimeField(db_index=True)
+    count = models.PositiveIntegerField(default=0)
+
+    def __str__(self) -> str:
+        return f"{self.key}={self.count}"
