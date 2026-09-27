@@ -2,7 +2,7 @@
 base_url = "http://localhost:8080"
 
 [tiers]
-claimed = ["T1"]
+claimed = ["T1", "T2"]
 pitch = "The judging desk Raptors can run on Monday: DOGFOOD preloaded, every judge's work signed, every ranking shows its math and fixes its own doubt."
 
 [auth]
