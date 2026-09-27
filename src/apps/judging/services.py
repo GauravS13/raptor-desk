@@ -10,6 +10,7 @@ from django.db.models import Max
 
 from apps.accounts.models import JudgeProfile, RoleGrant, User
 from apps.events.models import Event, Phase
+from apps.judging import ledger
 from apps.judging.models import Assignment, Conflict, JudgeTrack, Review, ScoreItem
 from apps.submissions.models import Project
 from apps.teams.models import TeamMember
@@ -341,6 +342,7 @@ def save_review(
         )
     if submit:
         Assignment.objects.filter(pk=item.pk).update(status="done")
+        ledger.append(review, "amended" if was_submitted else "submitted")
         action = "review.amended" if was_submitted else "review.submitted"
         audit.record(
             action,

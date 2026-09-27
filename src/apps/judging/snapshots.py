@@ -17,7 +17,7 @@ from django.db import transaction
 from django.db.models import Max
 
 from apps.events.models import Event, Phase
-from apps.judging import deliberation
+from apps.judging import deliberation, ledger
 from apps.judging.models import RankingDecision, ResultsSnapshot
 from apps.judging.results import EventResults, compute
 from core import audit, clock, signing
@@ -76,6 +76,7 @@ def build_payload(event: Event, number: int) -> dict[str, Any]:
         "cutoffs": list(evaluation.cutoffs),
         "prize_places": found.prize_places,
         "input_hash": input_hash(results),
+        "ledger": dict(zip(("entries", "head"), ledger.head(event), strict=True)),
         "reviews": len(results.observations),
         "judges": len({o.judge for o in results.observations}),
         "flags": list(evaluation.flags),

@@ -16,6 +16,7 @@ from apps.judging import (
     deliberation,
     exports,
     feedback,
+    ledger,
     publishing,
     services,
     snapshots,
@@ -162,6 +163,7 @@ def organizer_judging(request: HttpRequest, event_id: str) -> HttpResponse:
         "proposed": event.assignments.filter(status="proposed").select_related("judge", "project"),
         "batch_form": batch,
         "conflict_form": conflict_form,
+        "ledger": ledger.verify(event),
     }
     return render(request, "judging/organizer.html", context)
 

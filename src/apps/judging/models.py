@@ -39,6 +39,10 @@ def _query_id() -> str:
     return new_id("qry")
 
 
+def _score_event_id() -> str:
+    return new_id("sce")
+
+
 class JudgeTrack(models.Model):
     """Which tracks a judge covers in an event. A judge never sees another track's projects."""
 
@@ -316,3 +320,33 @@ class ResultQuery(models.Model):
 
     def __str__(self) -> str:
         return f"query on {self.project_id} ({self.status})"
+
+
+class ScoreEvent(models.Model):
+    """One entry in an event's score ledger: hash-chained, signed and append-only.
+
+    Written whenever a review is submitted, amended or imported. ``payload``
+    holds the scores and a hash of the written feedback; ``entry_hash`` links
+    it to the previous entry, so changing any entry breaks every later hash.
+    """
+
+    id = models.CharField(primary_key=True, max_length=40, default=_score_event_id, editable=False)
+    event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="ledger")
+    seq = models.PositiveIntegerField()
+    review_id = models.CharField(max_length=40, db_index=True)
+    payload = models.JSONField()
+    payload_hash = models.CharField(max_length=64)
+    prev_hash = models.CharField(max_length=64)
+    entry_hash = models.CharField(max_length=64)
+    signature = models.CharField(max_length=128)
+    key_id = models.CharField(max_length=16)
+    created_at = models.DateTimeField(default=clock.now)
+
+    class Meta:
+        ordering: ClassVar[list[str]] = ["event_id", "seq"]
+        constraints: ClassVar[list[models.BaseConstraint]] = [
+            models.UniqueConstraint(fields=["event", "seq"], name="ledger_seq_per_event")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.event_id} ledger #{self.seq}"

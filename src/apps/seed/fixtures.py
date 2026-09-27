@@ -22,6 +22,7 @@ from django.db import transaction
 
 from apps.accounts.models import JudgeProfile, RoleGrant, User
 from apps.events.models import Criterion, Event, Phase, Track, Weighting
+from apps.judging import ledger
 from apps.judging.models import Assignment, JudgeTrack, Review, ScoreItem
 from apps.submissions.models import Project, ProjectStatus, ProjectVersion
 from apps.teams.models import Team, TeamMember
@@ -222,6 +223,7 @@ def load(path: Path, *, slug: str = "sample-hack-2026") -> ImportResult:
         )
         for key, value in raw["criteria"].items():
             ScoreItem.objects.create(review=review, criterion=criteria[key], value=int(value))
+        ledger.append(review, "imported")
 
     result.counts = {
         "tracks": len(tracks),

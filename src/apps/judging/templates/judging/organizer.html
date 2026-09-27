@@ -5,6 +5,18 @@
 {% block content %}
 {% include "events/_event_header.html" %}
 
+<article aria-labelledby="ledger">
+  <header><strong id="ledger">Score ledger</strong></header>
+  {% if ledger.valid %}
+    <p class="notice success">Verified just now: {{ ledger.entries }} entr{{ ledger.entries|pluralize:"y,ies" }}, every hash and
+      signature checks out, and every score in the database matches its entry. Head <code>{{ ledger.head|slice:":16" }}…</code></p>
+  {% else %}
+    <p class="notice error" role="alert">Verification failed at entry {{ ledger.first_bad_seq }}: {{ ledger.problem }}.</p>
+  {% endif %}
+  <p class="muted">Every submitted score is chained to the one before it and signed, so a change made anywhere but here
+    is found. <a href="/api/events/{{ event.id }}/ledger/verify">Verify through the API</a>.</p>
+</article>
+
 <section aria-labelledby="progress">
   <h2 id="progress">Judge progress</h2>
   <p>

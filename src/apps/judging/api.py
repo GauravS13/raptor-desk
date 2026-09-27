@@ -13,6 +13,7 @@ from apps.judging import (
     deliberation,
     exports,
     feedback,
+    ledger,
     publishing,
     repositories,
     services,
@@ -774,3 +775,28 @@ def answer_query(request: HttpRequest, event_id: str, query_id: str, payload: An
         get_principal(request), get_event(event_id), query_id, payload.response
     )
     return query_out(item)
+
+
+# --- Score ledger ------------------------------------------------------------------
+
+
+class LedgerVerifyOut(Schema):
+    valid: bool
+    entries: int
+    head: str
+    first_bad_seq: int | None
+    problem: str
+
+
+@router.get("/events/{event_id}/ledger/verify", response=LedgerVerifyOut)
+@policy(event_policies.EVENTS_MANAGE)
+def verify_ledger(request: HttpRequest, event_id: str) -> LedgerVerifyOut:
+    """Recompute every hash and signature, and compare the live scores with the ledger."""
+    return LedgerVerifyOut(**ledger.verify(get_event(event_id)).as_dict())
+
+
+@router.get("/events/{event_id}/ledger")
+@policy(event_policies.EVENTS_MANAGE)
+def export_ledger(request: HttpRequest, event_id: str) -> dict[str, Any]:
+    """Every ledger entry with its hashes and signature, for offline checking."""
+    return ledger.export(get_event(event_id))
