@@ -79,3 +79,36 @@ def test_public_key_endpoint_is_public_and_matches_signatures() -> None:
     assert body["alg"] == "Ed25519"
     assert body["public_key"] == sig.public_key
     assert body["key_id"] == sig.key_id
+
+
+def _document(payload: dict) -> dict:
+    sig = signing.sign(payload)
+    return {
+        "payload": payload,
+        "payload_hash": signing.payload_hash(payload),
+        "signature": {"public_key": sig.public_key, "signature": sig.value},
+    }
+
+
+def test_check_document_accepts_only_this_deployments_signature() -> None:
+    from nacl.encoding import HexEncoder
+    from nacl.signing import SigningKey
+
+    good = _document({"number": "C-000001", "person": "Ada"})
+    assert signing.check_document(good) == ""
+
+    changed = {**good, "payload": {**good["payload"], "person": "Eve"}}
+    assert "changed" in signing.check_document(changed)
+
+    forged_payload = {"number": "C-000001", "person": "Eve"}
+    other = SigningKey.generate()
+    forged = {
+        "payload": forged_payload,
+        "payload_hash": signing.payload_hash(forged_payload),
+        "signature": {
+            "public_key": other.verify_key.encode(encoder=HexEncoder).decode(),
+            "signature": other.sign(signing.canonical_json(forged_payload)).signature.hex(),
+        },
+    }
+    assert "different key" in signing.check_document(forged)
+    assert signing.check_document({"payload": "nope"}) == "not a signed document"

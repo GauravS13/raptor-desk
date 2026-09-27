@@ -121,3 +121,23 @@ def verify(obj: Any, signature_hex: str, public_key: str | None = None) -> bool:
     except (BadSignatureError, ValueError):
         return False
     return True
+
+
+def check_document(document: Any) -> str:
+    """Check a signed document {payload, payload_hash, signature{public_key, signature}}.
+
+    Returns "" when it is intact and signed by *this* deployment's key, otherwise
+    the reason it is not. A document re-signed with someone else's key is
+    self-consistent, so the key itself must match too.
+    """
+    if not isinstance(document, dict) or not isinstance(document.get("payload"), dict):
+        return "not a signed document"
+    payload = document["payload"]
+    signature = document.get("signature") or {}
+    if payload_hash(payload) != document.get("payload_hash"):
+        return "the content does not match its hash: it was changed"
+    if signature.get("public_key") != public_key_hex():
+        return "signed with a different key, not by this deployment"
+    if not verify(payload, str(signature.get("signature", ""))):
+        return "the signature does not match the content"
+    return ""

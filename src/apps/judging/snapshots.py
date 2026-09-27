@@ -163,10 +163,5 @@ def signed_document(snapshot: ResultsSnapshot) -> dict[str, Any]:
 
 
 def verify(document: dict[str, Any]) -> bool:
-    payload = document.get("payload")
-    signature = document.get("signature", {})
-    if not isinstance(payload, dict):
-        return False
-    if signing.payload_hash(payload) != document.get("payload_hash"):
-        return False
-    return signing.verify(payload, signature.get("signature", ""), signature.get("public_key"))
+    """Intact and signed by this deployment (see ``core.signing.check_document``)."""
+    return signing.check_document(document) == ""
