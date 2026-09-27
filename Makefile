@@ -1,5 +1,5 @@
 # Convenience targets. Every command also works without make (see README).
-.PHONY: up down reset test lint format accept
+.PHONY: up down reset test lint format accept check
 
 up:
 	docker compose up --build
@@ -25,3 +25,6 @@ format:
 accept:
 	python3 tools/run.py .dogfood.toml --fixtures data/fixtures.json > acceptance-report.txt
 	cat acceptance-report.txt
+
+check:
+	sh scripts/check.sh
