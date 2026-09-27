@@ -3,11 +3,12 @@ from django.urls import path
 
 from config.api import api
 from config.health import healthz
-from config.views import home
+from config.views import home, signing_key
 
 urlpatterns = [
     path("", home, name="home"),
     path("healthz", healthz, name="healthz"),
+    path(".well-known/raptor-desk-key", signing_key, name="signing-key"),
     path("api/", api.urls),
     path("admin/", admin.site.urls),
 ]
