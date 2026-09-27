@@ -47,7 +47,10 @@ data hygiene report for Sample Hack 2026 (evt_01):
 
 The fixed tokens and demo passwords exist only in the default `demo` profile. `RD_PROFILE=production` creates none of them.
 
-**Judging this project? Start with [EVALUATE.md](EVALUATE.md): a five-minute path through every scoring criterion.**
+**Judging this project?**
+- Open http://localhost:8080/tour: every scoring criterion, linked to the pages that show it.
+- Or read [EVALUATE.md](EVALUATE.md).
+- The sign-in page lists the demo accounts, with one button each.
 
 ---
 

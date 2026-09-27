@@ -7,7 +7,8 @@ Start the portal first:
 docker compose up        # wait for "serving on http://localhost:8080"
 ```
 
-Demo password for every account below: `raptor-demo-2026`.
+The same path, as clickable links: http://localhost:8080/tour. The sign-in page
+has a button for each demo account. The shared demo password is `raptor-demo-2026`.
 
 ---
 
