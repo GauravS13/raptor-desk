@@ -30,10 +30,10 @@ seeded. test logins:
 
 demo sign-in (password raptor-demo-2026):
   admin        admin@raptor-desk.local
-  organizer    organizer@raptor-desk.local
-  judge_a      jonas.vogel@example.org   (fixture judge jdg_26)
-  judge_b      diego.herrera@example.org (fixture judge jdg_24)
-  participant  priya1@example.org        (member of team tm_01)
+  organizer    organizer@raptor-desk.local  (organizer of every demo event)
+  judge_a      jonas.vogel@example.org  (fixture judge jdg_26)
+  judge_b      diego.herrera@example.org  (fixture judge jdg_24)
+  participant  priya1@example.org  (member of team tm_01)
 
 data hygiene report for Sample Hack 2026 (evt_01):
   [resubmission] 'Dry Harbour' was submitted 2 times (prj_07, prj_41); kept as one project with versions ...

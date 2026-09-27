@@ -29,7 +29,7 @@ To see it in the browser:
     -d '{"title":"late","summary":"probe"}'
   ```
   This returns `409 {"error":{"code":"submissions_closed", ...}}`.
-- Sign in as `priya1@example.org`, open the live DOGFOOD event and use **Your submission** to save a draft, submit it, edit it and resubmit. You get a new version, not a new project.
+- Sign in as `priya1@example.org` and open **DOGFOOD 2026 (live demo)**, which is open for submissions. Choose **Form a team**, then **Your submission**: save a draft, submit it, edit it and resubmit. You get a new version, not a new project.
 
 ## Judging Integrity (25%)
 
