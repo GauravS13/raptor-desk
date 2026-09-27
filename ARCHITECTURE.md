@@ -53,6 +53,7 @@ and it gives one place to enforce access rules.
 | `submissions` | Projects and immutable versions, answers, artifacts, public gallery and event pages |
 | `judging` | Judge tracks, assignments, reviews and scores, conflicts, progress, results, CSV exports, judge console |
 | `seed` | The fixture loader, the data hygiene report, demo accounts and the live DOGFOOD event |
+| `ops` | Backup and verified restore, the `doctor` health report, admin-only Prometheus metrics |
 
 ## Operations
 
@@ -61,6 +62,7 @@ and it gives one place to enforce access rules.
 - **SQLite in WAL mode** with IMMEDIATE transactions on the `data` volume, which also holds the secret key and the signing key. A backup is a copy of one directory. PostgreSQL works through the same ORM, and its trigger variants are included.
 - **Offline.** Every asset is vendored (no CDN, no web fonts), and email goes to the bundled Mailpit.
 - **Strict CSP.** No inline scripts or styles, no eval, no third-party hosts. A test fails if a template breaks this.
+- **Logs** are one JSON line per request, by route pattern and user id. URL tokens never reach them. See [OPERATIONS.md](OPERATIONS.md).
 
 ## Testing
 

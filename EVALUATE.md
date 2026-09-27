@@ -62,6 +62,12 @@ The method, its formulas, the fixture numbers and a simulation proof are in [JUD
 - The data you get out: **Exports** gives CSV for results, reviews, assignments, teams, submissions, registrations and audit.
 - Your event format is preloaded: open **DOGFOOD 2026 (live demo)**, then **Rubric**. The event page shows the published rubric.
 - `RD_PROFILE=production` refuses demo accounts and fixed tokens.
+- Run it like a service:
+  - `make doctor` gives a health report that says what to fix.
+  - `make backup` takes a consistent backup while the portal runs, and `make restore` verifies checksums before replacing anything.
+  - Logs are JSON, with no tokens.
+  - Admins get Prometheus `/metrics`.
+  - See [OPERATIONS.md](OPERATIONS.md).
 
 ## Code Quality & Innovation (15%)
 

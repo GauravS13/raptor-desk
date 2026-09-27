@@ -83,6 +83,7 @@ All seven official checks pass: [`acceptance-report.txt`](acceptance-report.txt)
 | | |
 |---|---|
 | [EVALUATE.md](EVALUATE.md) | Five-minute evaluation path, one section per scoring criterion |
+| [OPERATIONS.md](OPERATIONS.md) | Backups and restore, health report, logs, metrics, configuration, going to production |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | How the system fits together, and why |
 | [DATA-MODEL.md](DATA-MODEL.md) | Schema, invariants, the fixture transform, getting data in and out |
 | [JUDGING.md](JUDGING.md) | Assignment, scoring maths, normalization, uncertainty, proof |
@@ -96,6 +97,8 @@ All seven official checks pass: [`acceptance-report.txt`](acceptance-report.txt)
 uv sync                 # Python 3.12, dependencies from uv.lock
 make check              # ruff, formatting, architecture contracts, migrations, tests
 make accept             # run the official checker against a running portal
+make doctor             # health report of the running portal
+make backup             # consistent backup, safe while running (see OPERATIONS.md)
 uv run python tools/simulate_proof.py   # regenerate every number in JUDGING.md
 ```
 

@@ -108,3 +108,22 @@ added when the decision is made, next to the commit that implements it.
 - **Decided:** a test requests every sensitive resource as eight identities and compares with expected statuses; the markdown table is generated from those responses; the same test crawls every GET route as every role looking for server errors or API redirects.
 - **Why:** "judges cannot see each other's scores" should be shown, not asserted.
 - **Where:** `tests/test_access_matrix.py`, `ACCESS-MATRIX.md` · 39d5c6e
+
+## D-019 · Log requests by route pattern, never by raw URL
+- **Decided:** one JSON line per request with the route pattern (`/join/<str:token>`), status, duration, request id and user id; gunicorn's access log is off; a filter redacts URL tokens from every other log line, and a test fails if a new token route is not covered.
+- **Rejected:** gunicorn's access log; logging emails or IPs.
+- **Why:** invite links and sign-in links carry secrets in the path. Anyone with log access could have joined a team or signed in as someone else.
+- **Where:** `src/core/logs.py`, `scripts/entrypoint.sh` · 9947a85, 4a182a9
+
+## D-020 · Online backups; restore verifies before it touches anything
+- **Decided:** one archive with a database copy made by SQLite's online backup API, the uploads, both keys and a checksummed manifest. Restore checks paths, checksums and the schema version, saves the current state first, and records itself in the audit trail.
+- **Rejected:** copying `db.sqlite3` with `cp` (can capture a half-written WAL state); backing up the database without the keys (restored signatures would no longer verify).
+- **Why:** the moment someone restores is the worst moment to discover a damaged or incompatible backup.
+- **Where:** `src/apps/ops/backups.py` · 8d7a4b0
+
+## D-021 · Metrics read from the database
+- **Decided:** `/metrics` computes counts and ages from the database on each scrape; admins only; no personal data.
+- **Rejected:** in-process request counters.
+- **Why:** with several gunicorn processes, per-process counters give a different answer on every scrape. The numbers an organizer needs (reviews done, outbox stuck, last backup) are already in the database.
+- **Where:** `src/apps/ops/metrics.py` · 089f926
+
