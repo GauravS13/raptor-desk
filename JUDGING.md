@@ -1,0 +1,232 @@
+# Judging: assignment, scoring and normalization
+
+This document explains, and defends, every number Raptor Desk produces between a
+judge scoring a project and a ranking being published. Every figure below is
+reproduced by one command:
+
+```
+uv run python tools/simulate_proof.py
+```
+
+The code lives in `src/scoring_engine/`, a pure Python package with no Django
+and no database (an import-linter contract enforces this), so it can be read
+and tested on its own.
+
+---
+
+## 1. From a review to one number
+
+A rubric has criteria with weights, either percentages that sum to 100 or
+relative multipliers. A review's **composite** is the weighted mean of its
+scored criteria, on the rubric's own scale:
+
+    composite = Σ w_c · x_c / Σ w_c      (scored criteria present in the review)
+
+- **Gate criteria** (for DOGFOOD, "T1 cleared") never enter the composite. A
+  project whose average gate score is below the threshold is not ranked at all.
+- **Bonus criteria** (for DOGFOOD, the four bonus challenges) never change a
+  score. They only break exact ties.
+- **A missing criterion is left out**, not counted as zero.
+
+Each judge contributes **one observation per project**: their latest submitted
+review. A resubmitted project is one project with two versions (see §4), and
+a judge who reviewed both counts once, with the version they saw last.
+
+---
+
+## 2. Assignment strategy
+
+`scoring_engine/assignment.py` plans who reviews what.
+
+**Hard constraints, never broken:**
+- a judge only reviews projects in tracks they cover (a judge with no track covers all)
+- never a project from a team they have a conflict with. Conflicts are declared, or come from team membership or listed emails; domain matching is opt-in, because every fixture email is `@example.org`
+- never the same project twice
+- never more than the event's maximum load
+
+**Preferences, in order:**
+1. projects with the fewest eligible judges are placed first, so specialists are not used up by easy projects
+2. the least-loaded eligible judge
+3. the judge who has shared the fewest projects with this project's other judges. This keeps the judge network connected, which the bias model in §5 needs
+4. a stable hash of (judge, project) breaks remaining ties, so **the same input always produces the same plan**
+
+Reviews that cannot be placed are reported as shortfalls, never silently dropped.
+A plan is a **proposal** until an organizer publishes it. Each judge's queue is
+drawn in a random order (stored), so the position a project appears in does not
+systematically help or hurt it.
+
+---
+
+## 3. Who can see what
+
+Isolation is enforced by the API, not the pages:
+- a judge reads only their own reviews
+- another judge's scores return **403** before anything is looked up
+- aggregates (results, rankings, judge diagnostics) and the audit trail are for the event's organizers only
+- review data is read through a repository layer that scopes every query to the caller
+
+The official acceptance checker verifies this (`acceptance-report.txt`).
+
+---
+
+## 4. The awkward cases in the fixtures
+
+| Case | Where | What Raptor Desk does |
+|---|---|---|
+| **The judge who marks everything the same** | `jdg_07` gave 4/4/4 to all three of their projects | Recognised because the per-criterion scores are identical, not just the totals. Their reviews carry no ranking signal and are left out of the fit. They are listed in the diagnostics and in the boot report |
+| Equal totals that are not rubber-stamping | `jdg_19`'s composites happen to be equal after the resubmission merge (5+4+2 and 4+3+4 both total 11) | **Not** treated as flat: these are genuine judgements that happen to tie |
+| Judges with one review | `jdg_01`, `jdg_23` | Kept, but their leniency is heavily shrunk (ridge, §5). Flagged "fewer than 3 reviews" |
+| Resubmission | `prj_07` and `prj_41`, "Dry Harbour", same team and repo, 3 minutes before the close | One project with two versions. The later version is canonical. Each judge counts once, with the latest version they reviewed |
+| Unfinished batches | 8 projects have 2 reviews instead of 3 | Reported as under-reviewed. Wider intervals follow automatically |
+| Weak evidence | `prj_19`: 2 reviews, one from the flat-liner | Flagged "fewer than 2 informative reviews" |
+| Missing feedback | 49 of 123 counted reviews have no comment | Reported. New reviews cannot be submitted without written feedback |
+| Shared team names | "StillTrail" is used by three different teams | Each team keeps its id and gets a unique display name |
+
+---
+
+## 5. Estimators
+
+All three are always computed and shown side by side. The organizer chooses
+which one ranks; the default is the additive model.
+
+### Raw mean
+The average of the observations. It rewards a project for drawing lenient judges.
+
+### Why not the textbook z-score
+`z = (s − mean_j) / sd_j` divides by the judge's spread. On the fixtures that
+is zero or undefined for the flat-liner, the two single-review judges and
+`jdg_19`. **7 projects get a NaN score** (prj_03, prj_07, prj_08, prj_09,
+prj_17, prj_19, prj_24). Several platforms advertise z-score normalization;
+on this data it breaks.
+
+### Shrunken z-score (empirical Bayes)
+Each judge's mean and spread are shrunk toward the panel's, with a strength of
+k pseudo-reviews (k = 3):
+
+    mu_j'    = (n_j · mu_j + k · mu_g) / (n_j + k)
+    sigma_j' = sqrt((n_j · sigma_j² + k · sigma_g²) / (n_j + k))
+    s'       = mu_g + sigma_g · (s − mu_j') / sigma_j'
+
+A judge with one review or no spread borrows the panel's spread, so nothing is
+ever divided by zero, and results stay on the rubric's scale.
+
+### Additive judge-severity model (default)
+Each score is modelled as the project's quality plus the judge's leniency plus noise:
+
+    s_jp = q_p + b_j + e
+
+It is fitted by ridge-regularised alternating least squares (λ = 1):
+
+    q_p = (Σ_j (s_jp − b_j) + λ · mu) / (n_p + λ)
+    b_j =  Σ_p (s_jp − q_p)           / (n_j + λ)
+
+- `b_j` is the judge's leniency: positive is generous, negative is harsh.
+- It never divides by a judge's spread.
+- The ridge term pulls the leniency of judges with few reviews toward zero, and the quality of thinly reviewed projects toward the mean. That is the honest amount of doubt.
+- The model is identifiable because judges overlap on projects. The fixture's judge–project graph is one connected component, and the assignment planner keeps it connected.
+
+---
+
+## 6. Uncertainty and decision flags
+
+The chosen estimator is refitted on 300 bootstrap resamples (reviews resampled
+within each project, fixed seed). For each project this gives:
+- a **90% interval**: the 5th to 95th percentile of its score
+- **P(top k)**: how often it finished inside each prize cutoff (1, 2, 3, 5)
+
+Flags:
+- **close call for top k**: 0.2 < P(top k) < 0.8. The data does not settle it.
+- **fewer than 2 informative reviews**: the rank rests on too little evidence.
+- **methods disagree on the top k**: the shrunken z and additive top-k sets differ. A human should decide, with the reasons recorded.
+
+A model never silently decides prize money.
+
+---
+
+## 7. Results on the official fixtures
+
+<!-- generated by tools/simulate_proof.py -->
+- Observations (latest review per judge and project): 123
+- Judges with identical scores on every criterion: jdg_07
+- Projects where the textbook z-score is NaN: 7
+- Flag on the ranking: **methods disagree on the top 3**
+
+| Rank | Project | Raw mean (rank) | Shrunken z | Additive | Move | 90% interval | P(top 5) |
+|---|---|---|---|---|---|---|---|
+| 1 | prj_34 | 4.333 (2) | 4.328 | 4.102 | ▲1 | 3.88–4.29 | 0.90 |
+| 2 | prj_11 | 4.333 (1) | 4.176 | 4.054 | ▼1 | 3.90–4.16 | 0.85 |
+| 3 | prj_37 | 4.083 (5) | 4.069 | 3.995 | ▲2 | 3.45–4.44 | 0.64 |
+| 4 | prj_25 | 4.111 (4) | 4.017 | 3.948 | – | 3.63–4.21 | 0.47 |
+| 5 | prj_33 | 4.000 (7) | 4.163 | 3.928 | ▲2 | 3.78–4.05 | 0.40 |
+| 6 | prj_16 | 4.000 (6) | 3.934 | 3.914 | – | 3.52–4.17 | 0.37 |
+| 7 | prj_10 | 4.167 (3) | 3.999 | 3.819 | ▼4 | 3.57–4.11 | 0.24 |
+| 8 | prj_08 | 3.800 (9) | 3.687 | 3.755 | ▲1 | 3.39–4.12 | 0.18 |
+| 9 | prj_21 | 3.889 (8) | 3.744 | 3.719 | ▼1 | 3.28–4.17 | 0.19 |
+| 10 | prj_04 | 3.778 (10) | 3.708 | 3.702 | – | 3.37–3.99 | 0.08 |
+
+![Rank movement from raw mean to the bias-corrected ranking](docs/img/rank-movement.svg)
+
+**What this shows:**
+1. **The raw average ties for first place.** prj_11 and prj_34 both score 4.333. Both corrections resolve the tie in favour of prj_34.
+2. **prj_10 is third on the raw average only because of who judged it.** It has two reviews, one of them from `jdg_15`, the second most lenient judge (+0.44). Corrected, it drops to 6th (shrunken z) or 7th (additive), outside the top five. Prize money would change hands on judge luck.
+3. **Only first and second are statistically solid.** Places 3 to 5 are close calls (P(top 5) between 0.40 and 0.64), and the two corrections disagree on third. The honest output is "these need more evidence or a human decision", not a confident rank.
+4. **Leniency is large compared with the gaps between projects.** Judges range from −0.82 (`jdg_01`, one review) to +0.52 (`jdg_02`). The gaps between neighbouring projects are 0.02 to 0.10.
+
+---
+
+## 8. Proof: recovering a known truth
+
+The fixture has no ground truth, so `scoring_engine/simulate.py` builds events
+that do:
+- 40 projects with a true quality
+- 30 judges with leniency ~ N(0, 0.7) and noise
+- 3 reviews per project, with 15% of reviews missing
+- one flat-lining judge
+
+Each method is then scored on how well it recovers the true order.
+
+| Method | Mean Spearman ρ with the truth (200 runs) | Top-5 recall | Runs where it beats raw |
+|---|---|---|---|
+| raw mean | 0.697 (sd 0.094) | 0.502 | – |
+| shrunken z | 0.778 (sd 0.076) | 0.562 | 96% |
+| **additive** | **0.813** (sd 0.064) | **0.604** | **96%** |
+
+![Mean Spearman correlation with the truth by method](docs/img/normalization-proof.svg)
+
+The same comparison runs in the test suite on every commit
+(`tests/scoring/test_normalization.py`), together with property tests. No input,
+including one judge with one review, identical scores or an empty event, can
+produce NaN or infinity.
+
+---
+
+## 9. Sensitivity
+
+| Parameter | Value | Top 5 | Same set as the default? |
+|---|---|---|---|
+| λ (additive) | 0.3 | prj_34, prj_11, prj_16, prj_25, prj_37 | no |
+| λ (additive) | **1.0** | prj_34, prj_11, prj_37, prj_25, prj_33 | yes |
+| λ (additive) | 3.0 | prj_34, prj_11, prj_37, prj_25, prj_33 | yes |
+| k (shrunken z) | 1 | prj_34, prj_33, prj_11, prj_37, prj_25 | yes |
+| k (shrunken z) | **3** | prj_34, prj_11, prj_33, prj_37, prj_25 | yes |
+| k (shrunken z) | 10 | prj_34, prj_11, prj_33, prj_37, prj_10 | no |
+
+The top four are stable across every setting. Only fifth place moves, between
+prj_33, prj_16 and prj_10, which are exactly the projects the bootstrap already
+marks as close calls. The parameters change the answer only where the data is
+genuinely undecided.
+
+---
+
+## 10. Assumptions and limits
+
+- **Leniency is modelled as an offset.** A judge who compresses their range (uses only 3 and 4) is corrected for level, not for scale. The shrunken z-score handles scale, which is why both are shown.
+- **The bootstrap treats a project's reviews as exchangeable.** With 2 to 5 reviews per project the intervals are rough, and they are presented that way.
+- **The fixture scores are composites of three equally weighted criteria.** Other rubrics change the composite, not the method.
+- **Normalization cannot create evidence.** A project with one informative review is flagged, not confidently ranked.
+
+## 11. Reproducibility
+
+All seeds are fixed (bootstrap seed 0, simulation seeds 0–199). Every
+parameter is shown on the results page and in the results CSV. The golden tests
+pin the fixture outcomes, so a change to the maths that moved them would fail CI.
