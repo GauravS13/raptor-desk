@@ -51,3 +51,19 @@ ignore = ["RUF012"]
 [tool.coverage.run]
 source = ["src"]
 omit = ["src/*/migrations/*", "src/manage.py", "src/config/wsgi.py"]
+
+[tool.importlinter]
+root_packages = ["config", "core", "apps", "scoring_engine"]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "scoring_engine is pure: no Django, no app code"
+type = "forbidden"
+source_modules = ["scoring_engine"]
+forbidden_modules = ["django", "ninja", "config", "core", "apps"]
+
+[[tool.importlinter.contracts]]
+name = "core does not depend on apps or config"
+type = "forbidden"
+source_modules = ["core"]
+forbidden_modules = ["apps", "config"]

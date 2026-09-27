@@ -26,6 +26,8 @@ jobs:
       - run: uv sync --frozen
       - run: uv run ruff check .
       - run: uv run ruff format --check .
+      - name: Architecture contracts
+        run: PYTHONPATH=src uv run lint-imports
       - run: uv run pytest
 
   compose:
