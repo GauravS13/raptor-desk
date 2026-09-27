@@ -161,6 +161,16 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
 
+# Outgoing email goes to the local Mailpit inbox in Docker (http://localhost:8025).
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = env("RD_EMAIL_HOST", "localhost")
+EMAIL_PORT = int(env("RD_EMAIL_PORT", "1025"))
+EMAIL_USE_TLS = env_bool("RD_EMAIL_USE_TLS", False)
+EMAIL_HOST_USER = env("RD_EMAIL_USER", "")
+EMAIL_HOST_PASSWORD = env("RD_EMAIL_PASSWORD", "")
+EMAIL_TIMEOUT = 10
+DEFAULT_FROM_EMAIL = env("RD_EMAIL_FROM", "Raptor Desk <desk@raptor-desk.local>")
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

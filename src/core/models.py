@@ -10,6 +10,10 @@ def _audit_id() -> str:
     return new_id("aud")
 
 
+def _outbox_id() -> str:
+    return new_id("obx")
+
+
 class AuditEvent(models.Model):
     """One line of the audit trail. Append-only: the database rejects UPDATE and DELETE.
 
@@ -34,3 +38,39 @@ class AuditEvent(models.Model):
 
     def __str__(self) -> str:
         return f"{self.at:%Y-%m-%d %H:%M:%S} {self.action}: {self.summary}"
+
+
+class OutboxMessage(models.Model):
+    """Work to do after a transaction commits: send an email, deliver a webhook, etc.
+
+    Rows are written in the same database transaction as the change that caused
+    them, so a message is never lost and never sent for a change that rolled
+    back. The worker container processes due rows with retries and backoff.
+    """
+
+    id = models.CharField(primary_key=True, max_length=40, default=_outbox_id, editable=False)
+    kind = models.CharField(max_length=40, db_index=True)
+    payload = models.JSONField(default=dict)
+    # NULL (not "") so any number of messages can have no dedupe key under the unique index.
+    dedupe_key = models.CharField(max_length=200, null=True, blank=True, unique=True)
+    created_at = models.DateTimeField(default=clock.now)
+    next_attempt_at = models.DateTimeField(default=clock.now, db_index=True)
+    claimed_until = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveIntegerField(default=0)
+    done_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    failed_at = models.DateTimeField(null=True, blank=True)
+    last_error = models.TextField(blank=True)
+
+    class Meta:
+        ordering: ClassVar[list[str]] = ["created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.kind} {self.id}"
+
+    @property
+    def status(self) -> str:
+        if self.done_at:
+            return "done"
+        if self.failed_at:
+            return "failed"
+        return "pending"

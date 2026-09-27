@@ -2,23 +2,39 @@
 # Portal: http://localhost:8080   Mail inbox (local only): http://localhost:8025
 # No cloud account, hosted database or external API is needed to run it.
 
+x-app: &app
+  build: .
+  image: raptor-desk:local
+  environment:
+    RD_PROFILE: "${RD_PROFILE:-demo}"
+    RD_EMAIL_HOST: mailpit
+    RD_EMAIL_PORT: "1025"
+  volumes:
+    - data:/data
+  restart: unless-stopped
+
 services:
   app:
-    build: .
-    image: raptor-desk:local
+    <<: *app
     ports:
       - "${RD_PORT:-8080}:8080"
-    environment:
-      RD_PROFILE: "${RD_PROFILE:-demo}"
-      RD_EMAIL_HOST: mailpit
-      RD_EMAIL_PORT: "1025"
-    volumes:
-      - data:/data
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
       - mailpit
-    restart: unless-stopped
+
+  worker:
+    <<: *app
+    entrypoint: ["/app/scripts/worker.sh"]
+    healthcheck:
+      disable: true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      app:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
 
   mailpit:
     image: axllent/mailpit:v1.31
