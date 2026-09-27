@@ -1,0 +1,19 @@
+[portal]
+base_url = "http://localhost:8080"
+
+[tiers]
+claimed = ["T1"]
+pitch = "The judging desk Raptors can run on Monday: DOGFOOD preloaded, every judge's work signed, every ranking shows its math and fixes its own doubt."
+
+[auth]
+organizer   = "Authorization: Bearer rd_seed_org_7f2a"
+judge_a     = "Authorization: Bearer rd_seed_jdg26_91bc"
+judge_b     = "Authorization: Bearer rd_seed_jdg24_44de"
+participant = "Authorization: Bearer rd_seed_prt_priya1_2e88"
+
+[routes]
+gallery      = "/events/evt_01/projects"
+submit       = "/api/events/evt_01/submissions"
+judge_scores = "/api/judge/scores"
+peer_scores  = "/api/judges/jdg_26/scores"
+csv_export   = "/api/events/evt_01/exports/results.csv"
