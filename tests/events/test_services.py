@@ -197,3 +197,17 @@ def test_custom_questions_can_be_created(event: Event, organizer: Principal) -> 
     assert question.id.startswith("qst_")
     with pytest.raises(ApiError):
         services.add_question(organizer, event, "No options", kind="choice")
+
+
+def test_inviting_a_judge_sends_one_email(event: Event, organizer: Principal) -> None:
+    from django.core import mail
+
+    from core import outbox
+    from core.handlers import send_email  # noqa: F401
+
+    services.grant_role(organizer, event, "new.judge@example.org", "judge")
+    services.grant_role(organizer, event, "new.judge@example.org", "judge")
+    outbox.process_due()
+    assert len(mail.outbox) == 1
+    assert "invited to judge" in mail.outbox[0].subject
+    assert "/login/email" in mail.outbox[0].body

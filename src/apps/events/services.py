@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any
 
+from django.conf import settings
 from django.db import transaction
 from django.utils.text import slugify
 
@@ -23,7 +24,7 @@ from apps.events.models import (
     Track,
     Weighting,
 )
-from core import audit
+from core import audit, outbox
 from core.http import ApiError, conflict, not_found, unprocessable
 from core.policy import Principal
 
@@ -365,7 +366,27 @@ def grant_role(actor: Principal, event: Event, email: str, role: str, name: str 
             target=grant,
             details={"user_id": user.pk, "role": role},
         )
+        if role in {"judge", "organizer"}:
+            _send_invitation(event, user, role)
     return grant
+
+
+def _send_invitation(event: Event, user: User, role: str) -> None:
+    """Invite by email. The link asks for a one-time sign-in link, so no password is sent."""
+    what = "judge" if role == "judge" else "help organize"
+    outbox.enqueue(
+        "email",
+        {
+            "to": [user.email],
+            "subject": f"You are invited to {what} {event.name}",
+            "body": (
+                f"You have been invited to {what} {event.name} on Raptor Desk.\n\n"
+                f"Sign in with a one-time link: {settings.BASE_URL}/login/email\n"
+                f"Use this address: {user.email}\n"
+            ),
+        },
+        dedupe_key=f"invite:{event.pk}:{user.pk}:{role}",
+    )
 
 
 @transaction.atomic
