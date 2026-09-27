@@ -28,6 +28,8 @@ jobs:
       - run: uv run ruff format --check .
       - name: Architecture contracts
         run: PYTHONPATH=src uv run lint-imports
+      - name: README truth table matches the reports
+        run: python3 tools/truth_table.py --check
       - run: uv run pytest
 
   compose:
