@@ -52,6 +52,12 @@ responses for eight identities.
 - places 3 to 5 flagged as close calls
 - judge jdg_07 marked "identical scores everywhere: excluded"
 
+**The close-call loop** is on the same page, under "Close calls". It lists the projects
+whose prize place the data does not settle, and proposes which judge should review which
+of them, and why. **Ask these judges** assigns and emails them. To see a whole round,
+run `docker compose exec app python src/manage.py demo_loop`: it enters synthetic reviews
+labelled `[demo]` and prints how each chance moved.
+
 The method, its formulas, the fixture numbers and a simulation proof are in [JUDGING.md](JUDGING.md).
 
 **Audit trail:** the same event's **Audit** tab shows every change, filterable, with CSV download. Edits to it are rejected by the database.

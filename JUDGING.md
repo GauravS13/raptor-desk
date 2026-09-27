@@ -141,6 +141,38 @@ Flags:
 
 A model never silently decides prize money.
 
+### Measure, Doubt, Ask
+
+Averaging after the fact cannot fix a ranking that lacks evidence. Raptor Desk
+uses the doubt to decide where the next judge-hours go:
+
+1. **Measure.** The rubric and the additive model give a corrected score per project.
+2. **Doubt.** The bootstrap gives each project's chance of finishing inside every prize cutoff. Chances between 0.2 and 0.8 are close calls.
+3. **Ask.** Within a budget the organizer sets, the desk proposes extra reviews of exactly those projects, most uncertain first (`scoring_engine/ask.py`).
+   - **Hard constraints:** the judge covers the track, has no conflict, has not reviewed the project, is under the load cap, and is not a flat-liner.
+   - **Preferences, in order:** judges who already reviewed the neighbouring close calls (their direct comparison is what separates neighbours), then the least-loaded judge, then the judge with the most reviews (best-measured leniency).
+   - One click turns the proposals into assignments, emails the judges and writes the audit trail.
+   - Projects waiting for asked reviews are not asked about again.
+   - Projects with no eligible judge left are named for deliberation.
+
+On the fixtures, the Developer tools and Open hardware tracks have only three
+judges each, and all three already reviewed their close calls (prj_34, prj_11,
+prj_33). The desk says so, rather than breaking the track rule.
+
+`manage.py demo_loop` (demo profile only) runs one round on the fixtures. It
+enters synthetic reviews at the panel's consensus, labelled `[demo]` in the
+review and in the audit trail. The chances then move away from a coin flip:
+
+| Project | Cutoff | Before | After 6 asked reviews |
+|---|---|---|---|
+| prj_25 | top 5 | 50% | 71% |
+| prj_37 | top 5 | 58% | 69% |
+| prj_16 | top 5 | 36% | 25% |
+| prj_18 | top 5 | 22% | 13% (settled) |
+
+Two reviews rarely settle a call on their own. The loop is meant to be run
+again as reviews arrive, and whatever is still close goes to deliberation.
+
 ---
 
 ## 7. Results on the official fixtures

@@ -41,6 +41,8 @@ curl -i -X POST http://localhost:8080/api/events/{{ fixture_event }}/submissions
         <td><a href="/judge">Judge queue</a></td><td class="who">Judge A</td></tr>
       <tr><td>Bias-corrected ranking beside the raw mean, with 90% intervals, P(top k), close calls and the excluded flat-liner</td>
         <td><a href="/o/events/{{ fixture_event }}/results">Results</a></td><td class="who">Organizer</td></tr>
+      <tr><td>Measure, doubt, ask: the close calls on prize places, and the extra reviews the desk proposes to settle them</td>
+        <td><a href="/o/events/{{ fixture_event }}/results#doubt">Close calls</a></td><td class="who">Organizer</td></tr>
       <tr><td>Progress per judge and per project, assignment planning</td>
         <td><a href="/o/events/{{ fixture_event }}/judging">Judging</a></td><td class="who">Organizer</td></tr>
       <tr><td>Every change, readable and filterable; the database refuses edits to it</td>

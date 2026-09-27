@@ -111,6 +111,11 @@ All seven official checks pass. They were run with the unmodified `tools/run.py`
 ## What makes it different
 
 - **DOGFOOD itself comes preloaded.** A live event is configured from the `dogfood-2026` template: the T1 gate, 40/25/20/15 weights on a 0–5 scale, and bonuses that only break ties. There are also templates for Zero Dependency, MINDCODE and Code Resurrection (multiplier weights).
+- **It decides where judges' time goes.**
+  - The desk finds the projects whose prize place the data does not settle.
+  - It proposes the few extra reviews that would settle them: which judge, which project, and why.
+  - One click asks those judges.
+  - This is the Measure, Doubt, Ask loop ([JUDGING.md §6](JUDGING.md)).
 - **Judging you can defend.** An additive judge-bias model, a shrunken z-score and the raw mean, side by side, plus bootstrap intervals, P(top k) per prize cutoff, and flags for close calls, weak evidence and method disagreement. On the fixtures, the raw average's tie for first is resolved, and a project that ranked third only because it drew a lenient judge drops to seventh. A simulation with a known truth shows the correction beats averaging in 96% of runs.
 - **Isolation is proven, not promised.** Default-deny policies on every route; the portal refuses to boot if one is missing. The API accepts bearer tokens only and never redirects. The access matrix is generated from real responses.
 - **The traps are named.** The flat-lining judge, single-review judges, the resubmission (one project, two versions), missing feedback and shared team names are all detected at boot and handled in the data model.
@@ -145,7 +150,7 @@ uv run python tools/simulate_proof.py   # regenerate every number in JUDGING.md
 ## Known limitations
 
 - T3 (voting, comments) and most of T4 are not built yet. See the table above.
-- Certificates, signed judge records and the close-call review loop are planned next.
+- Certificates, signed judge records and publishing results are planned next.
 - Judges' review time is measured in the browser while the page is visible, so it is an estimate.
 - The leniency model corrects each judge's level, not their scale. JUDGING.md §10 lists the model's assumptions.
 
