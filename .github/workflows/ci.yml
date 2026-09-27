@@ -30,6 +30,8 @@ jobs:
         run: PYTHONPATH=src uv run lint-imports
       - name: README truth table matches the reports
         run: python3 tools/truth_table.py --check
+      - name: JUDGING.md numbers match the engine
+        run: uv run python tools/simulate_proof.py --check
       - run: uv run pytest
 
   compose:

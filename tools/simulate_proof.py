@@ -1,12 +1,17 @@
 """Reproduce every number in JUDGING.md: fixture results, simulation proof, sensitivity.
 
-    uv run python tools/simulate_proof.py            # prints markdown, writes docs/img/*.svg
+    uv run python tools/simulate_proof.py            # rewrites the generated blocks and SVGs
+    uv run python tools/simulate_proof.py --check    # exit 1 if JUDGING.md is out of date
 
-Deterministic: fixed seeds throughout, so the output is identical on every run.
+The numbers live between ``<!-- generated:NAME -->`` and ``<!-- /generated:NAME -->``
+markers in JUDGING.md and are never edited by hand. Deterministic: fixed seeds
+throughout, so the output is identical on every run.
 """
 
+import argparse
 import json
 import math
+import re
 import sys
 from pathlib import Path
 
@@ -40,18 +45,28 @@ def fixture_observations() -> list[Observation]:
     return [Observation(j, p, v, vec) for (j, p), (v, vec) in latest.items()]
 
 
+FLAG_LABELS = {"method_disagreement_top": "methods disagree on the top "}
+
+
+def _flag(flag: str) -> str:
+    for prefix, label in FLAG_LABELS.items():
+        if flag.startswith(prefix):
+            return f"**{label}{flag.removeprefix(prefix)}**"
+    return flag
+
+
 def fixture_section() -> str:
     obs = fixture_observations()
     result = evaluate(obs, bootstrap=300, seed=0)
-    by = result.by_project()
     broken = sorted(p for p, v in naive_z(obs).items() if math.isnan(v))
-    lines = ["### Results on the official fixtures", ""]
-    lines.append(f"- Observations (latest review per judge and project): {len(obs)}")
-    lines.append(f"- Judges with identical scores on every criterion: {sorted(flat_judges(obs))}")
+    flat = ", ".join(sorted(flat_judges(obs)))
+    lines = [f"- Observations (latest review per judge and project): {len(obs)}"]
+    lines.append(f"- Judges with identical scores on every criterion: {flat}")
     lines.append(
         f"- Projects where the textbook z-score is NaN: {len(broken)} ({', '.join(broken)})"
     )
-    lines.append(f"- Flags on the ranking: {', '.join(result.flags) or 'none'}")
+    flags = ", ".join(_flag(f) for f in result.flags) or "none"
+    lines.append(f"- Flags on the ranking: {flags}")
     lines.append("")
     lines.append(
         "| Rank | Project | Raw mean (rank) | Shrunken z | Additive | Move | 90% interval | P(top 5) |"
@@ -65,22 +80,6 @@ def fixture_section() -> str:
             f"{p.scores['shrunk_z']:.3f} | {p.scores['additive']:.3f} | {arrow} | "
             f"{p.ci_low:.2f}–{p.ci_high:.2f} | {p.p_top[5]:.2f} |"
         )
-    prj10 = by["prj_10"]
-    lines.append("")
-    lines.append(
-        f"prj_10: raw rank {prj10.ranks['raw']}, shrunken z rank {prj10.ranks['shrunk_z']}, "
-        f"additive rank {prj10.ranks['additive']}."
-    )
-    judges = sorted(result.judges, key=lambda j: j.severity)
-    lines.append("")
-    lines.append(
-        "Harshest judges: "
-        + ", ".join(f"{j.judge} ({j.severity:+.2f}, n={j.n})" for j in judges[:3])
-    )
-    lines.append(
-        "Most lenient: "
-        + ", ".join(f"{j.judge} ({j.severity:+.2f}, n={j.n})" for j in judges[::-1][:3])
-    )
     return "\n".join(lines)
 
 
@@ -104,38 +103,34 @@ def run_simulation() -> dict[str, dict[str, list[float]]]:
 
 
 def simulation_section(stats: dict[str, dict[str, list[float]]]) -> str:
-    lines = [f"### Simulation: {RUNS} synthetic events with a known true order", ""]
-    lines.append(
-        "| Method | Mean Spearman ρ with the truth | Top-5 recall | Runs where it beats raw (ρ) |"
-    )
-    lines.append("|---|---|---|---|")
+    labels = {"raw": "raw mean", "shrunk_z": "shrunken z", "additive": "**additive**"}
+    lines = [
+        f"| Method | Mean Spearman ρ with the truth ({RUNS} runs) | Top-5 recall "
+        "| Runs where it beats raw |",
+        "|---|---|---|---|",
+    ]
     raw_rho = np.array(stats["raw"]["rho"])
     for method in ("raw", "shrunk_z", "additive"):
         rho = np.array(stats[method]["rho"])
         wins = "–" if method == "raw" else f"{np.mean(rho > raw_rho) * 100:.0f}%"
-        lines.append(
-            f"| {method} | {rho.mean():.3f} (sd {rho.std():.3f}) | "
-            f"{np.mean(stats[method]['top5']):.3f} | {wins} |"
-        )
+        mean, recall = f"{rho.mean():.3f}", f"{np.mean(stats[method]['top5']):.3f}"
+        if method == "additive":
+            mean, recall, wins = f"**{mean}**", f"**{recall}**", f"**{wins}**"
+        lines.append(f"| {labels[method]} | {mean} (sd {rho.std():.3f}) | {recall} | {wins} |")
     return "\n".join(lines)
 
 
 def sensitivity_section() -> str:
     obs = fixture_observations()
     base = evaluate(obs, bootstrap=0).ranking("additive")[:5]
-    lines = ["### Sensitivity on the fixtures", ""]
-    lines.append("| Parameter | Value | Additive top 5 | Same set as default? |")
-    lines.append("|---|---|---|---|")
-    for lam in (0.3, 1.0, 3.0):
-        top = evaluate(obs, bootstrap=0, lam=lam).ranking("additive")[:5]
-        lines.append(
-            f"| λ | {lam} | {', '.join(top)} | {'yes' if set(top) == set(base) else 'no'} |"
-        )
-    for k in (1.0, 3.0, 10.0):
-        top = evaluate(obs, bootstrap=0, k=k).ranking("shrunk_z")[:5]
-        lines.append(
-            f"| k (shrunken z) | {k} | {', '.join(top)} | {'yes' if set(top) == set(base) else 'no'} |"
-        )
+    lines = ["| Parameter | Value | Top 5 | Same set as the default? |", "|---|---|---|---|"]
+    rows = [("λ (additive)", lam, 1.0, {"lam": lam}, "additive") for lam in (0.3, 1.0, 3.0)]
+    rows += [("k (shrunken z)", k, 3.0, {"k": k}, "shrunk_z") for k in (1.0, 3.0, 10.0)]
+    for name, value, default, params, method in rows:
+        top = evaluate(obs, bootstrap=0, **params).ranking(method)[:5]
+        shown = f"**{value:g}**" if value == default else f"{value:g}"
+        same = "yes" if set(top) == set(base) else "no"
+        lines.append(f"| {name} | {shown} | {', '.join(top)} | {same} |")
     return "\n".join(lines)
 
 
@@ -201,18 +196,47 @@ def rank_movement_svg(path: Path) -> None:
     path.write_text(svg, encoding="utf-8")
 
 
-def main() -> None:
+def blocks(stats: dict[str, dict[str, list[float]]]) -> dict[str, str]:
+    return {
+        "fixture-results": fixture_section(),
+        "simulation": simulation_section(stats),
+        "sensitivity": sensitivity_section(),
+    }
+
+
+def apply(text: str, generated: dict[str, str]) -> str:
+    for name, body in generated.items():
+        pattern = re.compile(
+            rf"(<!-- generated:{name} -->\n).*?(\n<!-- /generated:{name} -->)", re.DOTALL
+        )
+        if not pattern.search(text):
+            raise SystemExit(f"JUDGING.md has no generated:{name} markers")
+        text = pattern.sub(lambda m, b=body: m.group(1) + b + m.group(2), text)
+    return text
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--check", action="store_true", help="Exit 1 if JUDGING.md is stale.")
+    args = parser.parse_args(argv)
+    stats = run_simulation()
+    doc = ROOT / "JUDGING.md"
+    current = doc.read_text(encoding="utf-8")
+    updated = apply(current, blocks(stats))
+    if args.check:
+        if updated != current:
+            print("JUDGING.md is out of date: run python tools/simulate_proof.py")
+            return 1
+        print("JUDGING.md numbers match the engine")
+        return 0
     img = ROOT / "docs" / "img"
     img.mkdir(parents=True, exist_ok=True)
-    stats = run_simulation()
     bar_chart_svg(stats, img / "normalization-proof.svg")
     rank_movement_svg(img / "rank-movement.svg")
-    print(fixture_section())
-    print()
-    print(simulation_section(stats))
-    print()
-    print(sensitivity_section())
+    doc.write_text(updated, encoding="utf-8", newline="\n")
+    print("JUDGING.md and docs/img regenerated")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -230,6 +230,9 @@ def evaluate(
     if not observations:
         return Evaluation(method, [], [], cutoffs, {"k": k, "lambda": lam})
 
+    # A canonical order makes the seeded bootstrap independent of how the caller
+    # happened to list the reviews (database order, file order, ...).
+    observations = sorted(observations, key=lambda o: (o.project, o.judge, o.score))
     flat = flat_judges(observations)
     fit_obs = [o for o in observations if o.judge not in flat] or list(observations)
     raw = raw_means(observations)

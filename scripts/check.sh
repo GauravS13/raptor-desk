@@ -7,3 +7,5 @@ uv run ruff format --check .
 PYTHONPATH=src uv run lint-imports
 uv run python src/manage.py makemigrations --check --dry-run
 uv run pytest -q
+python3 tools/truth_table.py --check
+uv run python tools/simulate_proof.py --check

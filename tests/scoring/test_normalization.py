@@ -103,6 +103,15 @@ def test_results_are_reproducible(fixture_eval) -> None:
     assert [p.p_top for p in again.projects] == [p.p_top for p in fixture_eval.projects]
 
 
+def test_results_do_not_depend_on_the_order_of_the_input(fixture_eval) -> None:
+    shuffled = fixture_observations()
+    np.random.default_rng(7).shuffle(shuffled)
+    again = evaluate(shuffled, bootstrap=300, seed=0)
+    assert [(p.project, p.p_top, p.ci_low) for p in again.projects] == [
+        (p.project, p.p_top, p.ci_low) for p in fixture_eval.projects
+    ]
+
+
 # --- Proof: recovery of a known truth ------------------------------------------------
 
 
