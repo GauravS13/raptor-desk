@@ -26,6 +26,34 @@
 <h1>Not submitted yet</h1>
 {% endif %}
 
+<section id="comments" aria-labelledby="comments-heading">
+  <h2 id="comments-heading">Comments</h2>
+  {% for c in comments %}
+    <article>
+      <p>{{ c.body|linebreaksbr }}</p>
+      <footer><small class="muted">{{ c.author.name|default:"participant" }} · {{ c.created_at|date:"Y-m-d H:i" }} UTC</small>
+        {% if can_moderate %}
+          <form method="post" action="/o/events/{{ event.id }}/comments/{{ c.id }}/hide" class="inline">
+            {% csrf_token %}<button type="submit" class="secondary outline">Hide</button>
+          </form>
+        {% endif %}
+      </footer>
+    </article>
+  {% empty %}
+    <p class="muted">No comments yet.</p>
+  {% endfor %}
+  {% if can_comment %}
+    <form method="post" action="/projects/{{ project.id }}/comments">
+      {% csrf_token %}
+      <label for="comment-body">Add a comment</label>
+      <textarea id="comment-body" name="body" rows="3" maxlength="2000" required></textarea>
+      <button type="submit" class="secondary">Post comment</button>
+    </form>
+  {% elif not principal.is_authenticated %}
+    <p class="muted"><a href="/login?next=/projects/{{ project.id }}">Sign in</a> to comment.</p>
+  {% endif %}
+</section>
+
 {% if is_member and event.phase == "published" or is_member and event.phase == "archived" %}
 <p class="notice success">Results are published. <a href="/projects/{{ project.id }}/feedback">Read your team's feedback report</a>.</p>
 {% endif %}

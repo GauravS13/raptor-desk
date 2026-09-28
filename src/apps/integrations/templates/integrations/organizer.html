@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Integrations · {{ event.name }}{% endblock %}
+
+{% block content %}
+{% include "events/_event_header.html" %}
+
+<section aria-labelledby="embed">
+  <h2 id="embed">Embed the gallery</h2>
+  <p>Paste this on your own site. It is the only page other sites may frame; everything else refuses.</p>
+  <label for="embed-code">Embed code</label>
+  <textarea id="embed-code" rows="2" readonly>&lt;iframe src="{{ embed_url }}" title="{{ event.name }} projects" width="100%" height="480" loading="lazy"&gt;&lt;/iframe&gt;</textarea>
+  <p><a href="{{ embed_url }}">Preview</a></p>
+</section>
+
+<section aria-labelledby="bundle">
+  <h2 id="bundle">Event bundle</h2>
+  <p>The whole event as one JSON file: settings, tracks, prizes, rubric, people, teams, every project version and every review.
+    A manifest hash makes any later change detectable. Import it from the <a href="/o/">organizer home</a> to archive the event,
+    move it to another deployment, or start next year's edition.</p>
+  <p><a href="/o/events/{{ event.id }}/bundle.json" role="button" class="secondary">Download the bundle</a></p>
+</section>
+
+<section aria-labelledby="hooks">
+  <h2 id="hooks">Webhooks</h2>
+  <p class="muted">Each delivery is a JSON POST signed with <code>X-Dogfood-Signature: sha256=&lt;HMAC-SHA256 of the body&gt;</code>.
+    Failed deliveries are retried. Payloads never contain scores, tallies or emails.</p>
+
+  {% if created %}
+    <article>
+      <header><strong>Webhook created</strong></header>
+      <p class="notice warning">Copy the secret now: it is shown only once.</p>
+      <p>{{ created.url }}<br>Secret: <code>{{ created.secret }}</code></p>
+    </article>
+  {% endif %}
+
+  {% if hooks %}
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th scope="col">URL</th><th scope="col">Events</th><th scope="col">Last delivery</th><th scope="col">Actions</th></tr></thead>
+    <tbody>
+    {% for h in hooks %}
+      <tr>
+        <td>{{ h.url }}</td><td>{{ h.events|join:", " }}</td>
+        <td>{{ h.last_status|default:"none yet" }}{% if h.last_delivery_at %} · {{ h.last_delivery_at|date:"Y-m-d H:i" }} UTC{% endif %}</td>
+        <td>
+          <form method="post" action="/o/events/{{ event.id }}/integrations/webhooks/{{ h.id }}/ping" class="inline">{% csrf_token %}<button type="submit" class="secondary outline">Test</button></form>
+          <form method="post" action="/o/events/{{ event.id }}/integrations/webhooks/{{ h.id }}/delete" class="inline">{% csrf_token %}<button type="submit" class="secondary outline">Remove</button></form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
+
+  <form method="post" action="/o/events/{{ event.id }}/integrations/webhooks">
+    {% csrf_token %}
+    <label for="hook-url">Endpoint URL</label>
+    <input id="hook-url" name="url" type="url" placeholder="https://example.org/hooks/raptor" required>
+    <fieldset>
+      <legend>Send these events</legend>
+      {% for e in known_events %}
+        <label><input type="checkbox" name="events" value="{{ e }}" {% if forloop.first %}checked{% endif %}> {{ e }}</label>
+      {% endfor %}
+    </fieldset>
+    <button type="submit">Add webhook</button>
+  </form>
+</section>
+{% endblock %}

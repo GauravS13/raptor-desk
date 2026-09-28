@@ -18,6 +18,28 @@
   {% endif %}
 </p>
 
+{% if voting_open %}
+<article aria-labelledby="vote">
+  <header><strong id="vote">Community vote is open</strong>{% if event.voting_closes_at %} <span class="muted">until {{ event.voting_closes_at|date:"Y-m-d H:i" }} UTC</span>{% endif %}</header>
+  {% if vote_by_account %}
+    {% if principal.is_authenticated %}<p><a href="/events/{{ event.id }}/ballot" role="button">Vote with your account</a></p>
+    {% else %}<p><a href="/login?next=/events/{{ event.id }}/ballot">Sign in</a> to vote with your account.</p>{% endif %}
+  {% endif %}
+  {% if vote_by_email %}
+    <form method="post" action="/events/{{ event.id }}/vote-link" class="inline-form">
+      {% csrf_token %}
+      <label for="vote-email">Email me a voting link</label>
+      <input id="vote-email" name="email" type="email" autocomplete="email" required>
+      <button type="submit" class="secondary">Send</button>
+    </form>
+  {% endif %}
+  {% if vote_by_link %}<p class="muted">Got a ballot link from the organizers? Just open it.</p>{% endif %}
+  <p class="muted">Results stay hidden until voting closes.</p>
+</article>
+{% elif results_visible and event.voting_mode != "off" and event.voting_closes_at %}
+<p><a href="/events/{{ event.id }}/community" role="button" class="secondary">Community vote results</a></p>
+{% endif %}
+
 <dl class="facts">
   <dt>Submissions close</dt><dd>{{ event.submissions_close_at|date:"Y-m-d H:i"|default:"not set" }} UTC{% if not event.submissions_are_open %} · closed{% endif %}</dd>
   <dt>Reviews per project</dt><dd>{{ event.reviews_per_project }}</dd>

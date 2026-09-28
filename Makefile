@@ -25,6 +25,8 @@ format:
 accept:
 	python3 tools/run.py .dogfood.toml --fixtures data/fixtures.json > acceptance-report.txt
 	cat acceptance-report.txt
+	python3 tools/run_extended.py .dogfood-extended.toml > acceptance-extended-report.txt
+	cat acceptance-extended-report.txt
 	python3 tools/truth_table.py
 
 check:

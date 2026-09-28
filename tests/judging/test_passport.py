@@ -37,21 +37,25 @@ def published(db, settings, tmp_path) -> Event:
 
 def test_a_passport_is_private_until_the_judge_opts_in(published: Event) -> None:
     client = Client()
-    assert client.get("/judges/jdg_26/passport").status_code == 404
-    assert client.get("/api/judges/jdg_26/passport").status_code == 404
+    assert client.get("/judges/jdg_24/passport").status_code == 404
+    assert client.get("/api/judges/jdg_24/passport").status_code == 404
 
     opted = client.post(
-        "/api/me/passport", {"public": True}, content_type="application/json", **bearer("judge_a")
+        "/api/me/passport", {"public": True}, content_type="application/json", **bearer("judge_b")
     )
     assert opted.json() == {"public": True}
-    body = client.get("/api/judges/jdg_26/passport").json()
-    assert [c["event_id"] for c in body["certificates"]] == ["evt_01"]
-    assert body["certificates"][0]["verify_url"].startswith("/verify/")
-    page = client.get("/judges/jdg_26/passport").content.decode()
+    body = client.get("/api/judges/jdg_24/passport").json()
+    assert {c["event_id"] for c in body["certificates"]} == {"evt_01", "evt_archive"}
+    assert all(c["verify_url"].startswith("/verify/") for c in body["certificates"])
+    page = client.get("/judges/jdg_24/passport").content.decode()
     assert "Judge passport" in page and "score" not in page.lower().replace(
         "never shows scores", ""
     )
     assert AuditEvent.objects.filter(action="judging.passport_changed").exists()
+
+
+def test_the_demo_judge_a_passport_is_public_by_seed(published: Event) -> None:
+    assert Client().get("/api/judges/jdg_26/passport").status_code == 200
 
 
 def test_a_judge_can_only_change_their_own_passport(published: Event) -> None:
@@ -68,7 +72,7 @@ def test_a_judge_can_only_change_their_own_passport(published: Event) -> None:
 
 def test_the_queue_offers_the_switch(published: Event) -> None:
     client = Client()
-    client.post("/login", {"email": "jonas.vogel@example.org", "password": "raptor-demo-2026"})
+    client.post("/login", {"email": "diego.herrera@example.org", "password": "raptor-demo-2026"})
     assert "Make my passport public" in client.get("/judge").content.decode()
     client.post("/judge/passport", {"public": "1"})
     assert "Make it private" in client.get("/judge").content.decode()

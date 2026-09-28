@@ -7,7 +7,19 @@
   <h1>Your events</h1>
   <p>Events you organize.</p>
 </hgroup>
-{% if can_create %}<p><a href="/o/events/new" role="button">New event</a></p>{% endif %}
+{% if can_create %}<p><a href="/o/events/new" role="button">New event</a></p>
+<details>
+  <summary>Import an event bundle</summary>
+  <form method="post" action="/o/import" enctype="multipart/form-data">
+    {% csrf_token %}
+    <label for="bundle-file">Bundle (JSON, exported from any Raptor Desk)</label>
+    <input id="bundle-file" name="bundle" type="file" accept="application/json,.json" required>
+    <label for="bundle-name">Name for the imported event</label>
+    <input id="bundle-name" name="name" type="text" placeholder="for example: Sample Hack 2025 (archive)">
+    <button type="submit" class="secondary">Import</button>
+  </form>
+</details>
+{% endif %}
 {% if events %}
 <div class="table-wrap">
   <table>

@@ -53,6 +53,14 @@ triggers), not only in code.
 | `judging_scoreevent` | event, seq, review_id, payload, payload_hash, prev_hash, entry_hash, signature | **append-only**; unique (event, seq); hash-chained and signed |
 | `judging_credential` | kind (protocol / certificate / participation), number, code, event, user, payload, signature | **append-only**; one per kind, event and person; public ones found only by random code |
 
+### Voting and integrations
+| Table | Key columns | Invariants |
+|---|---|---|
+| `voting_ballottoken` | event, channel (link / email / member), token_hash, email_key, user, seed, credits | only a SHA-256 of the token; one member ballot per person and event; one email ballot per normalised address (kept as a keyed hash) |
+| `voting_vote` | event, token, project, credits, status (counted / quarantined / rejected), ip_hash | unique (ballot, project); network kept only as a salted hash |
+| `voting_comment` | project, author, body, hidden_at | hidden, never deleted |
+| `integrations_webhook` | owner, event (or all the owner organizes), url, events, secret, last_status | secret shown once; deliveries go through the outbox |
+
 ### Core
 | Table | Purpose | Invariants |
 |---|---|---|

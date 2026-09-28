@@ -32,6 +32,26 @@ curl -i -X POST http://localhost:8080/api/events/{{ fixture_event }}/submissions
   -d '{"title": "late", "summary": "probe"}'</code></pre>
 </section>
 
+<section aria-labelledby="public">
+  <h2 id="public">T3 public and T4 stretch</h2>
+  <table class="tour-table">
+    <thead><tr><th scope="col">What to check</th><th scope="col">Where</th><th scope="col">Sign in as</th></tr></thead>
+    <tbody>
+      <tr><td>Community vote: an emailed link (see Mailpit), your account, or a minted link; your own team is not on your ballot</td>
+        <td><a href="/events/evt_vote">Community vote event</a></td><td class="who">anyone, or Participant</td></tr>
+      <tr><td>The tally, visible to organizers only until voting closes; minting links; votes held for review</td>
+        <td><a href="/o/events/evt_vote/voting">Voting tab</a></td><td class="who">Organizer</td></tr>
+      <tr><td>Comments, escaped, for signed-in people</td>
+        <td><a href="/projects/prj_v02#comments">A project's comments</a></td><td class="who">anyone to read</td></tr>
+      <tr><td>Webhooks, the embeddable gallery and the event bundle</td>
+        <td><a href="/o/events/{{ fixture_event }}/integrations">Integrations</a>, <a href="/embed/events/{{ fixture_event }}/gallery">embed</a></td><td class="who">Organizer</td></tr>
+      <tr><td>A published archive event, made by importing a bundle, with certificates and a judge passport</td>
+        <td><a href="/events/evt_archive/results">Archive results</a>, <a href="/judges/jdg_26/passport">passport</a></td><td class="who">anyone</td></tr>
+    </tbody>
+  </table>
+  <pre><code>python3 tools/run_extended.py .dogfood-extended.toml    # 32 checks for T3 and T4</code></pre>
+</section>
+
 <section aria-labelledby="integrity">
   <h2 id="integrity">Judging integrity <small class="muted">25%</small></h2>
   <table class="tour-table">

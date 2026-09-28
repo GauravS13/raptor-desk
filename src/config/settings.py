@@ -86,6 +86,8 @@ INSTALLED_APPS = [
     "apps.judging",
     "apps.seed",
     "apps.ops",
+    "apps.voting",
+    "apps.integrations",
 ]
 
 AUTH_USER_MODEL = "accounts.User"

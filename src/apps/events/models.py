@@ -57,6 +57,7 @@ class VotingMode(models.TextChoices):
     LINK = "link", "Link-based ballot tokens"
     EMAIL = "email", "Email-verified voters"
     AUTH = "auth", "Signed-in participants"
+    ALL = "all", "All of these: links, email and signed-in accounts"
 
 
 class VotingScheme(models.TextChoices):

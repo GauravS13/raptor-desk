@@ -238,7 +238,7 @@ def public_record(code: str) -> Credential:
         .first()
     )
     if item is None:
-        raise not_found("No record with that code.")
+        raise not_found("Not valid: no record has that code.")
     return item
 
 

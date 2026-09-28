@@ -1,0 +1,25 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ event.name }} · projects</title>
+  <link rel="stylesheet" href="{% static 'css/embed.css' %}">
+</head>
+<body>
+  <main>
+    <h1>{{ event.name }}</h1>
+    <ul class="projects">
+      {% for p in projects %}
+        <li>
+          <a href="{{ base_url }}/projects/{{ p.id }}" target="_blank" rel="noopener noreferrer">{{ p.canonical_version.name }}</a>
+          {% if p.canonical_version.tagline %}<span>{{ p.canonical_version.tagline }}</span>{% endif %}
+        </li>
+      {% empty %}
+        <li>No projects yet.</li>
+      {% endfor %}
+    </ul>
+    <p class="credit"><a href="{{ base_url }}/events/{{ event.id }}" target="_blank" rel="noopener noreferrer">All details</a> · Raptor Desk</p>
+  </main>
+</body>
+</html>

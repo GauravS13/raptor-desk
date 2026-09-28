@@ -72,6 +72,7 @@ class VersionSource(models.TextChoices):
     API = "api", "REST API"
     FIXTURE = "fixture", "Fixture import"
     IMPORT = "import", "Bulk import"
+    DEMO = "demo", "Demo data"
 
 
 class ProjectVersion(models.Model):

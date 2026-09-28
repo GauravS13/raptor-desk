@@ -1,0 +1,42 @@
+DOGFOOD 2026 extended acceptance report (team-written, not the official checker)
+portal: http://localhost:8080
+run: d0fcc7
+claimed: T3 T4
+
+T3  results hidden from visitors during voting ...... PASS
+T3  results hidden from participants during voting .. PASS
+T3  organizers can see results during voting ........ PASS
+T3  valid ballot token can vote ..................... PASS
+T3  vote response does not leak tallies ............. PASS
+T3  same token cannot vote twice .................... PASS
+T3  forged token rejected ........................... PASS
+T3  cannot vote for own team ........................ PASS
+T3  duplicate identity detected ..................... PASS
+T3  email-gated vote works end to end ............... PASS
+T3  ballot order randomized per voter ............... PASS
+T3  gallery NOT randomized .......................... PASS
+T3  comments require identity ....................... PASS
+T3  comments are escaped ............................ PASS
+T3  audit trail records voting ...................... PASS
+T3  rate limit on voting ............................ PASS
+T4  OpenAPI served .................................. PASS
+T4  OpenAPI matches reality ......................... PASS
+T4  API rejects missing auth ........................ PASS
+T4  API enforces role ............................... PASS
+T4  webhook registration ............................ PASS
+T4  webhook fires and is signed ..................... PASS
+T4  certificate verifies ............................ PASS
+T4  forged certificate rejected ..................... PASS
+T4  judge record is signed .......................... PASS
+T4  tampered record rejected ........................ PASS
+T4  public record leaks no scores ................... PASS
+T4  embed widget frameable .......................... PASS
+T4  private pages NOT frameable ..................... PASS
+T4  export bundle ................................... PASS
+T4  import round-trip ............................... PASS
+T4  import rejects corrupted bundle ................. PASS
+
+T3  T3 checks: 16/16
+T4  T4 checks: 16/16
+
+claimed T3 T4, verified T3 T4

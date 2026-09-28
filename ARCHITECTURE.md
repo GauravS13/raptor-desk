@@ -55,6 +55,8 @@ and it gives one place to enforce access rules.
 | `judging` | Judge tracks, assignments, reviews and scores, conflicts, progress, results, close-call loop, deliberation, signed snapshots and publishing, feedback reports and queries, score ledger, protocols, certificates, passport, CSV exports, judge console |
 | `seed` | The fixture loader, the data hygiene report, demo accounts and the live DOGFOOD event |
 | `ops` | Backup and verified restore, the `doctor` health report, admin-only Prometheus metrics |
+| `voting` | Ballots (link, email, account), single and quadratic votes, burst quarantine, tallies hidden until close, comments |
+| `integrations` | Signed webhooks (delivered by the outbox worker), the embeddable gallery, event bundle export and import |
 
 ## Operations
 

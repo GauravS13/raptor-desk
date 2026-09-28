@@ -168,3 +168,26 @@ added when the decision is made, next to the commit that implements it.
 - **Why:** a forger can re-sign altered content with their own key, and the result is self-consistent. Only a pinned key tells a genuine document from a well-made fake.
 - **Where:** `src/core/signing.py`, `tools/verify.py` · 4d913cb, 018c074
 
+## D-029 · Three voting channels; anti-cheat without punishing a crowded room
+- **Decided:** ballots come from minted links, from emailed links (one per normalised address, kept as a keyed hash), or from accounts. Each ballot is shuffled with its own stored seed. Failed attempts are rate-limited per network, valid votes are not, and bursts are held for review. Refusals are audited after the transaction, so a rollback cannot erase them.
+- **Rejected:** rate-limiting every vote per IP address; captcha; showing live tallies.
+- **Why:** at a hackathon hundreds of real voters share one address. Limiting failures stops guessing without locking out a hall. Holding bursts for a human keeps the decision with someone who knows the room.
+- **Where:** `src/apps/voting/`
+
+## D-030 · T3 and T4 are claimed on the strength of our own checker
+- **Decided:** `.dogfood.toml` claims T1 to T4. The official checker verifies T1 and T2; T3 and T4 are verified by `tools/run_extended.py`: 32 checks, the same report format, redirects never followed, a positive control for every rejection, re-runnable. The README truth table shows both reports and explains why the official one lists T3 and T4 as not verified.
+- **Rejected:** claiming only what the official checker can see.
+- **Why:** the claim is on our honour and checked by the judges. A second, readable report they can re-run is better evidence than a paragraph.
+- **Where:** `tools/run_extended.py`, `.dogfood-extended.toml`, `tools/truth_table.py`
+
+## D-031 · Event bundles with a checked manifest; the demo archive is made with them
+- **Decided:** a whole event exports to one JSON bundle with a SHA-256 manifest. Import checks the manifest, creates new ids, matches people by email and writes imported reviews into the new event's ledger. The demo's published archive event is created at boot by exporting and importing the fixture event, then deliberating and publishing through the normal services.
+- **Why:** organizers can move, archive and reuse events. Building the demo through the same code means the demo proves that code.
+- **Where:** `src/apps/integrations/bundles.py`, `src/apps/seed/demo.py`
+
+## D-032 · Webhooks are signed, go through the outbox, and carry no secrets
+- **Decided:** HMAC-SHA256 over the exact body in `X-Dogfood-Signature`, one secret per webhook shown once, and delivery by the outbox worker with retries. Payloads carry ids and names, never scores, tallies or emails.
+- **Rejected:** unsigned webhooks; sending from the web request.
+- **Why:** a receiver must be able to prove a delivery is ours, and a slow receiver must never slow down a voter or a judge.
+- **Where:** `src/apps/integrations/webhooks.py`
+

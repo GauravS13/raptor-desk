@@ -134,3 +134,143 @@ def ensure_dogfood_event() -> Event:
     apply_template(principal, event, "dogfood-2026")
     event_services.transition(principal, event, Phase.SUBMISSIONS, reason="Demo event opens")
     return event
+
+
+# --- Community vote demo (the extended checker's T3 event) -------------------------
+
+VOTE_EVENT_ID = "evt_vote"
+# participant_b for the extended checker: a member of another team than participant.
+EXTENDED_LOGINS = (
+    SeedLogin(
+        "participant_b", "lena2@example.org", "rd_seed_prt_lena2_61d0", "member of team tm_02"
+    ),
+)
+VOTE_PROJECTS = (
+    ("Lantern Queue", "A calmer queue for hackathon demos"),
+    ("Tidewatch", "Flood alerts from open river data"),
+    ("Mosaic Ledger", "Shared expenses for student societies"),
+    ("Quiet Relay", "Low-bandwidth chat for field teams"),
+    ("Harbor Lights", "Accessible wayfinding for ferry terminals"),
+    ("Paper Compass", "Printable maps that update from a QR code"),
+    ("Signal Garden", "A sensor kit for school gardens"),
+    ("Night Ferry", "Timetables that work offline"),
+)
+
+
+@transaction.atomic
+def ensure_extended_logins() -> list[SeedLogin]:
+    require_demo_profile()
+    for login in EXTENDED_LOGINS:
+        user = User.objects.filter(email=login.email).first()
+        if user is not None:
+            _ensure_token(user, login.token, f"seed:{login.role}")
+    return list(EXTENDED_LOGINS)
+
+
+@transaction.atomic
+def ensure_vote_event() -> Event:
+    """A small event whose community vote is open, with fixed project ids.
+
+    participant (priya1) is on team tm_v01 with project prj_v01; participant_b
+    (lena2) is on tm_v02 with prj_v02. Six more teams have no members.
+    """
+    from apps.submissions.models import Project, ProjectStatus, ProjectVersion
+    from apps.teams.models import Team, TeamMember
+
+    require_demo_profile()
+    existing = Event.objects.filter(pk=VOTE_EVENT_ID).first()
+    if existing is not None:
+        return existing
+    now = clock.now()
+    event = Event.objects.create(
+        id=VOTE_EVENT_ID,
+        slug="community-vote-demo",
+        name="Community vote (live demo)",
+        description=(
+            "A small event with its community vote open: vote by link, by email or with your "
+            "account. Results stay hidden until voting closes."
+        ),
+        phase=Phase.JUDGING,
+        submissions_open_at=now - timedelta(days=10),
+        submissions_close_at=now - timedelta(days=1),
+        voting_mode="all",
+        voting_scheme="single",
+        voting_opens_at=now - timedelta(hours=1),
+        voting_closes_at=now + timedelta(days=60),
+    )
+    organizer = User.objects.get(email=SEED_LOGINS[0].email)
+    RoleGrant.objects.get_or_create(user=organizer, event=event, role="organizer")
+    members = {1: SEED_LOGINS[3].email, 2: EXTENDED_LOGINS[0].email}
+    for index, (name, tagline) in enumerate(VOTE_PROJECTS, start=1):
+        team = Team.objects.create(id=f"tm_v{index:02d}", event=event, name=f"{name} team")
+        email = members.get(index)
+        if email and (user := User.objects.filter(email=email).first()):
+            TeamMember.objects.create(team=team, user=user, event=event, role="lead")
+            RoleGrant.objects.get_or_create(user=user, event=event, role="participant")
+        project = Project.objects.create(
+            id=f"prj_v{index:02d}",
+            event=event,
+            team=team,
+            status=ProjectStatus.SUBMITTED,
+            gallery_order=index,
+        )
+        version = ProjectVersion.objects.create(
+            project=project,
+            n=1,
+            name=name,
+            tagline=tagline,
+            source="demo",
+            submitted_at=now - timedelta(days=2),
+        )
+        project.canonical_version = version
+        project.save(update_fields=["canonical_version"])
+    return event
+
+
+# --- A published archive event, made through the real export, import and publish paths -----
+
+ARCHIVE_EVENT_ID = "evt_archive"
+ARCHIVE_REASON = "Demo archive: the panel kept the computed order."
+
+
+def ensure_archive_event(source: Event) -> Event:
+    """Sample Hack 2026 exported, imported as an archive, deliberated and published.
+
+    Everything goes through the ordinary services (bundle import, decisions,
+    signed snapshot, publication), so the archive has judge protocols,
+    certificates and participation records. Judge A's passport is made public,
+    as the demo account's consent. The notification emails this would send to
+    the fixture addresses are recorded but not sent.
+    """
+    from apps.accounts.models import JudgeProfile
+    from apps.integrations import bundles
+    from apps.judging import deliberation, snapshots
+    from core.models import OutboxMessage
+
+    require_demo_profile()
+    existing = Event.objects.filter(pk=ARCHIVE_EVENT_ID).first()
+    if existing is not None:
+        return existing
+    organizer = User.objects.get(email=SEED_LOGINS[0].email)
+    actor = Principal(user_id=organizer.pk, email=organizer.email)
+    before = set(OutboxMessage.objects.values_list("pk", flat=True))
+    with transaction.atomic():
+        event = bundles.import_bundle(
+            actor,
+            bundles.export(source),
+            "Sample Hack 2025 (archive)",
+            event_id=ARCHIVE_EVENT_ID,
+        )
+        event_services.transition(actor, event, Phase.DELIBERATION, reason="Judging closed")
+        for row in deliberation.board(event).undecided:
+            deliberation.record_decision(
+                actor, event, kind="confirm", project_id=row.project_id, rationale=ARCHIVE_REASON
+            )
+        snapshots.freeze(actor, event)
+        event_services.transition(actor, event, Phase.PUBLISHED, reason="Demo archive")
+        judge_a = User.objects.get(email=SEED_LOGINS[1].email)
+        JudgeProfile.objects.update_or_create(user=judge_a, defaults={"public_passport": True})
+        OutboxMessage.objects.exclude(pk__in=before).update(
+            done_at=clock.now(), last_error="demo archive: not sent"
+        )
+    return event

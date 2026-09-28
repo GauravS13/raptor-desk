@@ -86,19 +86,40 @@ def render(root: Path = ROOT) -> str:
     config = tomllib.loads((root / ".dogfood.toml").read_text(encoding="utf-8"))
     claimed = set(config.get("tiers", {}).get("claimed", []))
     checks: list[Check] = []
-    claim_line = ""
-    present = []
+    claim_lines: dict[str, str] = {}
     for report, filename in REPORTS.items():
         path = root / filename
         if path.is_file():
             found, line = parse_report(path.read_text(encoding="utf-8"), report)
             checks += found
-            present.append(f"[`{filename}`]({filename})")
-            if report == "official":
-                claim_line = line
+            claim_lines[report] = line
 
     out = [BEGIN, ""]
-    out.append(f"`{claim_line or 'no official report yet'}`, from {' and '.join(present)}.")
+    out.append("| Report | Written by | Claim line |")
+    out.append("|---|---|---|")
+    out.append(
+        f"| [`{REPORTS['official']}`]({REPORTS['official']}) | the organizers' `tools/run.py`, "
+        f"unmodified | `{claim_lines.get('official', 'no report yet')}` |"
+    )
+    if "extended" in claim_lines:
+        out.append(
+            f"| [`{REPORTS['extended']}`]({REPORTS['extended']}) | this team, "
+            f"`tools/run_extended.py` | `{claim_lines['extended']}` |"
+        )
+    official_tiers = {c.tier for c in checks if c.report == "official"}
+    beyond = sorted(t for t in claimed if t not in official_tiers)
+    if beyond:
+        out += [
+            "",
+            f"**How {' and '.join(beyond)} {'is' if len(beyond) == 1 else 'are'} claimed.** "
+            "The official checker contains checks for "
+            f"{' and '.join(sorted(official_tiers)) or 'no tier'} only, so its report lists "
+            f'{" and ".join(beyond)} as "claimed but not verified" for every team. '
+            "They are verified by the team-written extended checker instead: one file, standard "
+            "library only, the same report format, no redirects followed, and a positive "
+            "control for every rejection. Re-run it with "
+            "`python3 tools/run_extended.py .dogfood-extended.toml`.",
+        ]
     out += ["", "| Tier | Claimed | Official checks | Extended checks | Status |"]
     out.append("|---|---|---|---|---|")
     official = [c for c in checks if c.report == "official"]

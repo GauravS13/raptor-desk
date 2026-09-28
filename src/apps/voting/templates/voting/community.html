@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Community vote · {{ event.name }}{% endblock %}
+
+{% block content %}
+<hgroup>
+  <h1>Community vote: {{ event.name }}</h1>
+  <p>{% if event.voting_is_open %}Voting is open. Only organizers can see this page until it closes.{% else %}Final results{% endif %}</p>
+</hgroup>
+<div class="table-wrap">
+<table>
+  <thead><tr><th scope="col">Place</th><th scope="col">Project</th><th scope="col">Votes</th>{% if event.voting_scheme == "quadratic" %}<th scope="col">Weight</th>{% endif %}{% if organizer %}<th scope="col">Held for review</th>{% endif %}</tr></thead>
+  <tbody>
+  {% for row in rows %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td><a href="/projects/{{ row.project_id }}">{{ row.name }}</a></td>
+      <td>{{ row.counted }}</td>
+      {% if event.voting_scheme == "quadratic" %}<td>{{ row.weight|floatformat:2 }}</td>{% endif %}
+      {% if organizer %}<td>{{ row.held }}</td>{% endif %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="muted">Each ballot is one person: links are single-use, email links are one per address, and accounts vote once.
+  Votes arriving in a burst from one network are held for the organizers to review, and are not counted unless they approve them.</p>
+{% endblock %}

@@ -42,11 +42,18 @@ class Command(BaseCommand):
 
         logins = demo.ensure_demo_accounts(event)
         demo.ensure_dogfood_event()
+        demo.ensure_vote_event()
+        demo.ensure_archive_event(event)
+        extended = demo.ensure_extended_logins()
 
         self.stdout.write("")
         self.stdout.write("seeded. test logins:")
         for login in logins:
             self.stdout.write(f"  {login.role:<12} Authorization: Bearer {login.token}")
+        for login in extended:
+            self.stdout.write(
+                f"  {login.role:<12} Authorization: Bearer {login.token}  (extended checker)"
+            )
         self.stdout.write("")
         self.stdout.write(f"demo sign-in (password {demo.DEMO_PASSWORD}):")
         self.stdout.write(f"  admin        {demo.ADMIN_EMAIL}")

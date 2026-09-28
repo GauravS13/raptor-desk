@@ -49,6 +49,7 @@ ignore = ["RUF012"]
 "tests/**" = ["S101", "S105", "S106"]
 # Generates markdown tables and SVG: long literal lines and typographic symbols are intended.
 "tools/simulate_proof.py" = ["E501", "RUF001"]
+"tools/run_extended.py" = ["E501", "S310", "C901", "PLR0915", "PLR0912"]
 
 [tool.coverage.run]
 source = ["src"]

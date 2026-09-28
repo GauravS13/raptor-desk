@@ -15,6 +15,8 @@ from apps.submissions.api import GALLERY, PROJECT_VIEW, TEAM_SELF, readable_proj
 from apps.submissions.forms import SubmissionForm
 from apps.submissions.services import SubmissionContent
 from apps.teams.services import team_of
+from apps.voting import comments as comment_services
+from apps.voting import services as voting
 from core.actions import ui_action
 from core.http import ApiError
 from core.policy import Rule, define, get_principal, policy
@@ -34,6 +36,11 @@ def event_page(request: HttpRequest, event_id: str) -> HttpResponse:
         "criteria": specs_of(event),
         "my_team": team_of(principal, event),
         "project_count": len(services.gallery(event)),
+        "voting_open": event.voting_is_open,
+        "vote_by_email": voting.channel_enabled(event, "email"),
+        "vote_by_account": voting.channel_enabled(event, "member"),
+        "vote_by_link": voting.channel_enabled(event, "link"),
+        "results_visible": voting.results_visible_to(principal, event),
     }
     return render(request, "submissions/event_page.html", context)
 
@@ -72,6 +79,9 @@ def project_page(request: HttpRequest, project_id: str) -> HttpResponse:
         "answers": version.answers.select_related("question") if version else [],
         "is_member": services.is_member(principal, project),
         "draft": services.draft_of(project),
+        "comments": comment_services.visible(project),
+        "can_comment": principal.is_authenticated and project.status == "submitted",
+        "can_moderate": principal.is_admin or principal.has_role("organizer", project.event_id),
     }
     return render(request, "submissions/project.html", context)
 

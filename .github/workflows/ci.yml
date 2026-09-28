@@ -52,6 +52,14 @@ jobs:
           exit 1
       - name: Smoke test
         run: curl -fsS http://localhost:8080/healthz
+      - name: Official acceptance checker (T1, T2)
+        run: |
+          python3 tools/run.py .dogfood.toml --fixtures data/fixtures.json | tee report.txt
+          grep -q "verified T1 T2" report.txt
+      - name: Extended acceptance checker (T3, T4)
+        run: |
+          python3 tools/run_extended.py .dogfood-extended.toml | tee extended.txt
+          grep -q "verified T3 T4" extended.txt
       - name: Logs
         if: always()
         run: docker compose logs --tail 100

@@ -16,6 +16,8 @@ urlpatterns = [
     path("", include("apps.judging.urls")),
     path("", include("apps.ops.urls")),
     path("", include("apps.seed.urls")),
+    path("", include("apps.voting.urls")),
+    path("", include("apps.integrations.urls")),
     path("api/", api.urls),
     path("admin/", admin.site.urls),
 ]

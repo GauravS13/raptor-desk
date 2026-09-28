@@ -29,8 +29,9 @@ from apps.judging.api import FEEDBACK, JUDGE_SELF, PUBLIC_VERIFY, SIGNED_IN
 from apps.judging.models import Assignment
 from apps.submissions import services as submission_services
 from apps.submissions.models import Project
+from apps.voting import services as voting_services
 from core.actions import ui_action
-from core.http import ApiError, not_found
+from core.http import ApiError, forbidden, not_found
 from core.policy import Rule, define, get_principal, policy
 
 
@@ -424,6 +425,9 @@ METHOD_NAMES = {
 @policy(PUBLIC_RESULTS)
 def public_results(request: HttpRequest, event_id: str) -> HttpResponse:
     event = get_event(event_id)
+    principal = get_principal(request)
+    if event.voting_is_open and not voting_services.results_visible_to(principal, event):
+        raise forbidden("Results stay hidden until the community vote closes.")
     publication = publishing.published(event)
     if publication is None:
         raise not_found("Results for this event have not been published.")

@@ -71,6 +71,7 @@ class AssignmentSource(models.TextChoices):
     AUTO = "auto", "Assigned by the algorithm"
     CLOSE_CALL = "close_call", "Extra review for a close call"
     FIXTURE = "fixture", "Imported"
+    IMPORT = "import", "Imported from an event bundle"
 
 
 class AssignmentStatus(models.TextChoices):

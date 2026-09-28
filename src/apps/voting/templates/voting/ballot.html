@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Ballot · {{ event.name }}{% endblock %}
+
+{% block content %}
+<hgroup>
+  <h1>Your ballot: {{ event.name }}</h1>
+  <p>{% if quadratic %}Spread your {{ state.credits }} credits: a project's weight is the square root of the credits it gets,
+    so backing one favourite heavily costs more than backing several.{% else %}One vote. Choose the project you would most like to win.{% endif %}</p>
+</hgroup>
+<p class="muted">Projects are listed in an order drawn for you alone, so position favours no one. Your own team's project is not on your ballot.
+  Results stay hidden until voting closes.</p>
+
+{% if not open %}
+  <p class="notice warning">Voting is closed.</p>
+{% elif not quadratic and state.spent %}
+  <p class="notice success">Your vote is recorded. Thank you.</p>
+{% elif quadratic %}
+  <p><strong>{{ state.remaining }}</strong> of {{ state.credits }} credits left.</p>
+{% endif %}
+
+<div class="ballot">
+{% for p in projects %}
+  <article>
+    <header><strong>{{ p.canonical_version.name }}</strong>{% if p.canonical_version.tagline %} <span class="muted">· {{ p.canonical_version.tagline }}</span>{% endif %}</header>
+    <p><a href="/projects/{{ p.id }}">Read about this project</a></p>
+    {% if open %}
+      {% if p.id in state.voted_for %}
+        <p class="tag">voted</p>
+      {% elif quadratic and state.remaining %}
+        <form method="post" action="{{ action }}" class="inline-form">
+          {% csrf_token %}
+          <input type="hidden" name="project" value="{{ p.id }}">
+          <label for="credits-{{ p.id }}">Credits</label>
+          <input id="credits-{{ p.id }}" name="credits" type="number" min="1" max="{{ state.remaining }}" value="1" required>
+          <button type="submit">Back this project</button>
+        </form>
+      {% elif not quadratic and not state.spent %}
+        <form method="post" action="{{ action }}">
+          {% csrf_token %}
+          <input type="hidden" name="project" value="{{ p.id }}">
+          <button type="submit">Vote for {{ p.canonical_version.name }}</button>
+        </form>
+      {% endif %}
+    {% endif %}
+  </article>
+{% empty %}
+  <p class="muted">There are no projects on this ballot.</p>
+{% endfor %}
+</div>
+{% endblock %}

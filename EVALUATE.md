@@ -32,6 +32,36 @@ To see it in the browser:
   This returns `409 {"error":{"code":"submissions_closed", ...}}`.
 - Sign in as `priya1@example.org` and open **DOGFOOD 2026 (live demo)**, which is open for submissions. Choose **Form a team**, then **Your submission**: save a draft, submit it, edit it and resubmit. You get a new version, not a new project.
 
+### T3 and T4: the extended checker
+
+The official checker has no T3 or T4 checks, so we wrote one in the same style.
+Its first line says it is ours, and it is re-runnable:
+
+```bash
+python3 tools/run_extended.py .dogfood-extended.toml
+```
+
+Expected result: 32 × PASS and `claimed T3 T4, verified T3 T4`. The committed copy is
+`acceptance-extended-report.txt`. Each official requirement line maps to these checks:
+
+| Official requirement | Extended checks |
+|---|---|
+| T3 community voting (email-gated, link-based, authenticated) | valid ballot token can vote · email-gated vote works end to end · cannot vote for own team |
+| T3 comments | comments require identity · comments are escaped |
+| T3 results hidden during the voting window | hidden from visitors · hidden from participants · organizers can see · vote response does not leak tallies |
+| T3 randomized ballot order | ballot order randomized per voter · gallery NOT randomized |
+| T3 anti-abuse | same token cannot vote twice · forged token rejected · duplicate identity detected · audit trail records voting · rate limit on voting |
+| T4 REST API and webhooks | OpenAPI served · OpenAPI matches reality · API rejects missing auth · API enforces role · webhook registration · webhook fires and is signed |
+| T4 certificates and records | certificate verifies · forged certificate rejected |
+| T4 signed, publicly verifiable judge records | judge record is signed (checked locally with Ed25519) · tampered record rejected · public record leaks no scores |
+| T4 embeddable gallery | embed widget frameable · private pages NOT frameable |
+| T4 bulk import and export | export bundle · import round-trip · import rejects corrupted bundle |
+
+**To try the vote yourself:**
+1. Open http://localhost:8080/events/evt_vote.
+2. Ask for an emailed link. It arrives in Mailpit at http://localhost:8025.
+3. As the Organizer, open the event's **Voting** tab to mint links and to see the tally. Nobody else sees the tally until voting closes.
+
 ## Judging Integrity (25%)
 
 **Isolation, with curl:**

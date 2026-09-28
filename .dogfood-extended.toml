@@ -1,0 +1,50 @@
+[portal]
+base_url = "http://localhost:8080"
+mailpit_url = "http://localhost:8025"
+webhook_listen = "0.0.0.0:9099"
+webhook_target = "http://host.docker.internal:9099/hook"
+
+[tiers]
+claimed = ["T3", "T4"]
+
+[auth]
+organizer = "Authorization: Bearer rd_seed_org_7f2a"
+participant = "Authorization: Bearer rd_seed_prt_priya1_2e88"
+participant_b = "Authorization: Bearer rd_seed_prt_lena2_61d0"
+judge_a = "Authorization: Bearer rd_seed_jdg26_91bc"
+
+[voting]
+event = "evt_vote"
+own_project = "prj_v01"
+other_project = "prj_v02"
+mint_tokens = "/api/events/evt_vote/ballot-tokens"
+ballot = "/api/ballots/{token}"
+vote = "/api/ballots/{token}/vote"
+vote_as_member = "/api/events/evt_vote/votes"
+email_request = "/api/events/evt_vote/vote-links"
+results_public = "/events/evt_vote/results"
+results_api = "/api/events/evt_vote/community-results"
+comments = "/api/projects/{project}/comments"
+project_page = "/projects/{project}"
+gallery = "/events/evt_vote/projects"
+audit = "/api/events/evt_vote/audit"
+
+[t4]
+openapi = "/api/openapi.json"
+webhooks = "/api/webhooks"
+public_key = "/.well-known/raptor-desk-key"
+passport = "/api/judges/jdg_26/passport"
+certificate = "/api/verify/{code}"
+record_verify = "/api/verify"
+embed = "/embed/events/evt_01/gallery"
+embed_title = "Glass Signal"
+private_page = "/o/"
+export = "/api/events/evt_01/export"
+export_event = "evt_01"
+import = "/api/event-bundles"
+
+[official_routes]
+submit = "/api/events/evt_01/submissions"
+judge_scores = "/api/judge/scores"
+peer_scores = "/api/judges/jdg_26/scores"
+csv_export = "/api/events/evt_01/exports/results.csv"

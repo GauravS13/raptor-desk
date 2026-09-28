@@ -18,7 +18,7 @@ from django.http import HttpRequest, HttpResponse
 
 # URL prefixes whose next path segment is a secret token. A test fails if a
 # route with a token parameter is added without being listed here.
-SECRET_ROUTE_PREFIXES = ("join", "login/magic", "api/invites")
+SECRET_ROUTE_PREFIXES = ("join", "login/magic", "api/invites", "vote", "api/ballots")
 
 _SECRET_PATH = re.compile(
     r"(/(?:" + "|".join(re.escape(p) for p in SECRET_ROUTE_PREFIXES) + r")/)(?!<)[^/?#\s'\"]+"

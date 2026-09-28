@@ -11,6 +11,7 @@ from django.db import transaction
 from django.db.models import Max
 
 from apps.events.models import CustomQuestion, Event, Track
+from apps.integrations import webhooks
 from apps.submissions.models import CustomAnswer, Project, ProjectStatus, ProjectVersion
 from apps.teams.models import Team, TeamMember
 from core import audit, clock
@@ -175,6 +176,11 @@ def submit(principal: Principal, project: Project) -> ProjectVersion:
     project.canonical_version = draft
     project.status = ProjectStatus.SUBMITTED
     project.save(update_fields=["canonical_version", "status", "updated_at"])
+    webhooks.emit(
+        project.event_id,
+        "project.submitted",
+        {"project": project.pk, "version": draft.n, "name": draft.name},
+    )
     audit.record(
         "submission.submitted",
         f"Submitted v{draft.n} of '{draft.name}'",

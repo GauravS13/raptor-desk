@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Voting · {{ event.name }}{% endblock %}
+
+{% block content %}
+{% include "events/_event_header.html" %}
+
+<p>
+  <span class="tag">voting: {{ event.get_voting_mode_display }}</span>
+  <span class="tag">{{ event.get_voting_scheme_display }}</span>
+  <span class="tag">{% if event.voting_is_open %}open{% else %}not open{% endif %}</span>
+  {% if event.voting_opens_at %}<span class="muted">{{ event.voting_opens_at|date:"Y-m-d H:i" }} to {{ event.voting_closes_at|date:"Y-m-d H:i"|default:"(no end)" }} UTC</span>{% endif %}
+  · <a href="/o/events/{{ event.id }}/settings">change in Settings</a>
+</p>
+<p><span class="tag">ballots: {{ summary.ballots }}</span> <span class="tag">votes: {{ summary.votes }}</span>
+  <span class="tag">held for review: {{ summary.held }}</span></p>
+
+{% if minted %}
+<article>
+  <header><strong>{{ minted|length }} new ballot link{{ minted|length|pluralize }}</strong></header>
+  <p class="notice warning">Copy these now: each works once, and they are not stored, so they cannot be shown again.</p>
+  <label for="minted">Links, one per line</label>
+  <textarea id="minted" rows="8" readonly>{% for link in minted %}{{ link }}
+{% endfor %}</textarea>
+</article>
+{% endif %}
+
+{% if link_channel %}
+<form method="post" action="/o/events/{{ event.id }}/voting/mint" class="inline-form">
+  {% csrf_token %}
+  <label for="count">Mint ballot links</label>
+  <input id="count" name="count" type="number" min="1" max="500" value="10" required>
+  <button type="submit" class="secondary">Mint</button>
+</form>
+{% endif %}
+
+<section aria-labelledby="tally">
+  <h2 id="tally">Tally <small class="muted">organizers only until voting closes</small></h2>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th scope="col">Project</th><th scope="col">Votes counted</th><th scope="col">Weight</th><th scope="col">Held</th></tr></thead>
+    <tbody>
+    {% for row in rows %}
+      <tr><td>{{ row.name }} <small class="muted">{{ row.project_id }}</small></td><td>{{ row.counted }}</td><td>{{ row.weight|floatformat:2 }}</td><td>{{ row.held }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section aria-labelledby="held">
+  <h2 id="held">Held for review</h2>
+  <p class="muted">Votes that arrived in a burst from one network. A venue's shared wifi looks like this too, so decide with
+    what you know about the room. Voters were told nothing different.</p>
+  {% if held %}
+  <form method="post" action="/o/events/{{ event.id }}/voting/review">
+    {% csrf_token %}
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">Select</th><th scope="col">Project</th><th scope="col">Ballot</th><th scope="col">When (UTC)</th></tr></thead>
+      <tbody>
+      {% for v in held %}
+        <tr>
+          <td><input type="checkbox" name="vote_ids" value="{{ v.id }}" aria-label="Select vote {{ v.id }}" checked></td>
+          <td>{{ v.project_id }}</td><td>{{ v.token_id }}</td><td>{{ v.created_at|date:"Y-m-d H:i:s" }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    <button type="submit" name="decision" value="count">Count the selected votes</button>
+    <button type="submit" name="decision" value="reject" class="secondary">Reject them</button>
+  </form>
+  {% else %}
+    <p class="muted">Nothing held.</p>
+  {% endif %}
+</section>
+{% endblock %}
