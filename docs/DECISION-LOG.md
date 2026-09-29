@@ -208,3 +208,21 @@ added when the decision is made, next to the commit that implements it.
 - **Why:** judges read tables of numbers for hours. The design makes doubt and verification visible at a glance, and the fonts are vendored, so it still works offline.
 - **Where:** `src/static/css/theme.css`, `src/templates/home.html`
 
+
+## D-036 · A kingmaker check beside the close calls
+- **Decided:** refit the ranking without each judge in turn. A judge whose removal alone changes the prize places, or first place, is listed on the results page and in the API, with the projects that would enter and leave. Projects only that judge reviewed are left out of the comparison.
+- **Rejected:** down-weighting influential judges automatically; hiding the check until publishing.
+- **Why:** the bootstrap resamples reviews but keeps every judge, so it misses a prize that rests on one opinion. On the fixtures, two judges alone decide first place. The desk shows it and people decide; it never silently removes a judge.
+- **Where:** `src/scoring_engine/influence.py`, `src/apps/judging/results.py`
+
+## D-037 · Publish the calibration of our own uncertainty
+- **Decided:** measure, over the same 200 synthetic events, how often the 90% intervals contain the truth and how well the stated chances match what happens, and generate the numbers into JUDGING.md, checked in CI.
+- **Rejected:** quoting "90% intervals" without checking them; widening the intervals before the deadline, which would change every published chance without its own calibration run.
+- **Why:** the intervals turned out too narrow (about half contain the truth). Saying so is what lets the desk use chances to find doubt rather than to decide.
+- **Where:** `src/scoring_engine/calibration.py`, `tools/simulate_proof.py`
+
+## D-038 · Production refuses to start with demo credentials; CI proves the report is exact
+- **Decided:** the entrypoint runs a safety gate after migrations. In the production profile it stops the portal while fixed seed tokens are active or a demo account still accepts the public demo password. CI checks the SHA-256 of the official checker and fixtures, reruns the checker and byte-compares its output with the committed report.
+- **Rejected:** a warning in the health report only; trusting the committed report.
+- **Why:** a demo volume reused in production would publish working credentials. A report that CI regenerates cannot drift from what the code does.
+- **Where:** `src/apps/ops/management/commands/safety_gate.py`, `scripts/entrypoint.sh`, `.github/workflows/ci.yml`

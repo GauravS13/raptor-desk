@@ -287,6 +287,7 @@ def organizer_results(request: HttpRequest, event_id: str) -> HttpResponse:
     budget = _budget(request.GET.get("budget"))
     doubt = close_calls.report(event, budget=budget, results=computed)
     names = dict(User.objects.filter(pk__in=services.judge_ids(event)).values_list("pk", "name"))
+    places = deliberation.prize_places(event)
     context = {
         "event": event,
         "tab": "results",
@@ -304,6 +305,8 @@ def organizer_results(request: HttpRequest, event_id: str) -> HttpResponse:
         "gated_out": computed.gated_out,
         "doubt": doubt,
         "pairwise": pairwise.table(event),
+        "prize_places": places,
+        "kingmakers": results_service.kingmakers(computed, places),
         "project_names": doubt.results.names,
         "judge_names": names,
         "can_ask": event.phase == "judging",

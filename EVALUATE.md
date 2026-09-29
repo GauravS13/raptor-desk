@@ -88,7 +88,12 @@ of them, and why. **Ask these judges** assigns and emails them. To see a whole r
 run `docker compose exec app python src/manage.py demo_loop`: it enters synthetic reviews
 labelled `[demo]` and prints how each chance moved.
 
-The method, its formulas, the fixture numbers and a simulation proof are in [JUDGING.md](JUDGING.md).
+**The kingmaker check** is further down the same page. It lists every judge whose removal
+alone changes the top 5 or first place: on the fixtures, `jdg_04` and `jdg_15` each decide
+first place on their own. The same list is at `GET /api/events/evt_01/kingmakers`.
+
+The method, its formulas, the fixture numbers, a simulation proof and the calibration of
+the stated chances are in [JUDGING.md](JUDGING.md).
 
 **From ranking to published result** (as the Organizer, on Sample Hack 2026):
 1. **Overview:** move the event to *deliberation*.

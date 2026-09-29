@@ -301,6 +301,48 @@ The same comparison runs in the test suite on every commit
 including one judge with one review, identical scores or an empty event, can
 produce NaN or infinity.
 
+### 8b. Calibration: is the stated uncertainty honest?
+
+A 90% interval should contain the truth about 90% of the time, and a project
+given a 70% chance of a top-5 finish should finish there about 70% of the time.
+`scoring_engine/calibration.py` checks both on the same 200 synthetic events,
+with the production bootstrap (300 resamples). The model fixes quality only up
+to a shift, so each event's estimates are moved to the truth's mean first.
+We publish the numbers as they come out:
+
+<!-- generated:calibration -->
+- Projects checked: 7973 across 200 synthetic events
+- **90% intervals that contain the true quality: 52%** (22% with 1 informative review, 48% with 2 informative reviews, 59% with 3+ informative reviews)
+- Brier score of P(top 5): **0.073**, against 0.109 for always stating the base rate (lower is better)
+- Projects ranked on the wrong side of the top-5 line: 785; flagged as a close call beforehand: **396 (50%)**
+
+| Stated P(top 5) | Projects | Mean stated | Really in the top 5 |
+|---|---|---|---|
+| 0.00–0.05 | 5722 | 0.00 | 0.03 |
+| 0.05–0.20 | 744 | 0.11 | 0.15 |
+| 0.20–0.50 | 626 | 0.32 | 0.26 |
+| 0.50–0.80 | 427 | 0.64 | 0.50 |
+| 0.80–0.95 | 238 | 0.89 | 0.71 |
+| 0.95–1.00 | 216 | 0.98 | 0.80 |
+<!-- /generated:calibration -->
+
+**What this means:**
+1. **The intervals are too narrow.** Resampling two or three reviews cannot
+   show how much a fourth judge might disagree, and a project with one
+   informative review gets an interval of zero width. Read a "90% interval" as
+   a spread of the evidence at hand, not as a guarantee.
+2. **The chances rank projects well but are overconfident at the ends.** The
+   Brier score beats the base rate clearly, yet a stated 95%+ is right about
+   four times in five. That is why the desk never publishes a chance as a
+   verdict: it uses the chance to find where people must look.
+3. **Doubt catches about half of the mistakes before they happen.** Half of
+   the projects the ranking puts on the wrong side of the prize line were
+   already flagged as close calls, so an organizer who follows the Ask and
+   deliberation steps fixes them with evidence rather than luck.
+4. **The fix is known and deliberately deferred:** a residual bootstrap that
+   also resamples judge leniency would widen the intervals. It changes every
+   published chance, so it waits for a release with its own calibration run.
+
 ---
 
 ## 9. Sensitivity
@@ -321,12 +363,51 @@ prj_33, prj_16 and prj_10, which are exactly the projects the bootstrap already
 marks as close calls. The parameters change the answer only where the data is
 genuinely undecided.
 
+### 9b. Kingmaker check: does one judge decide a prize?
+
+For each judge, `scoring_engine/influence.py` refits the ranking without that
+judge's reviews. A judge is a **kingmaker** when removing them, and nobody
+else, changes which projects hold the prize places or who comes first.
+Projects that only that judge reviewed are left out of the comparison: losing
+them is a coverage gap, not influence. The organizer results page runs the
+same check on live data, with the event's own number of prize places.
+
+On the official fixtures (top 5):
+
+<!-- generated:kingmakers -->
+| Judge | Reviews | Without this judge, enters the top 5 | Leaves the top 5 | Winner |
+|---|---|---|---|---|
+| jdg_02 | 6 | prj_16 | prj_33 | prj_34 (unchanged) |
+| jdg_04 | 4 | – | – | **prj_34 → prj_37** |
+| jdg_09 | 5 | prj_16 | prj_33 | prj_34 (unchanged) |
+| jdg_11 | 6 | prj_16 | prj_37 | prj_34 (unchanged) |
+| jdg_15 | 6 | – | – | **prj_34 → prj_11** |
+| jdg_16 | 6 | prj_21 | prj_25 | prj_34 (unchanged) |
+| jdg_22 | 5 | prj_16 | prj_37 | prj_34 (unchanged) |
+| jdg_24 | 11 | prj_16, prj_18 | prj_33, prj_37 | prj_34 (unchanged) |
+| jdg_29 | 9 | prj_19 | prj_33 | prj_34 (unchanged) |
+
+9 of 30 judges are kingmakers on the top 5; 2 of them alone decide first place.
+<!-- /generated:kingmakers -->
+
+This check is stricter than the bootstrap, and it finds something the
+bootstrap misses. The bootstrap resamples reviews but keeps every judge, so it
+calls first place fairly safe. Yet removing `jdg_04` (4 reviews) or `jdg_15`
+(6 reviews) alone hands first place to another project, because the leniency
+each of them is corrected for rests on only a few reviews. Places 3 to 5 move
+with seven different judges, which matches the close calls in §7.
+
+A kingmaker is not a bad judge. It marks a prize that rests on one opinion, so
+the desk shows it next to the close calls, where the organizer can ask for more
+reviews, and the deliberation board, where a human decides with a reason on the
+record.
+
 ---
 
 ## 10. Assumptions and limits
 
 - **Leniency is modelled as an offset.** A judge who compresses their range (uses only 3 and 4) is corrected for level, not for scale. The shrunken z-score handles scale, which is why both are shown.
-- **The bootstrap treats a project's reviews as exchangeable.** With 2 to 5 reviews per project the intervals are rough, and they are presented that way.
+- **The bootstrap treats a project's reviews as exchangeable.** With 2 to 5 reviews per project the intervals are rough and too narrow (§8b measures by how much), and they are presented that way.
 - **The fixture scores are composites of three equally weighted criteria.** Other rubrics change the composite, not the method.
 - **Normalization cannot create evidence.** A project with one informative review is flagged, not confidently ranked.
 

@@ -10,6 +10,9 @@ python manage.py check --fail-level ERROR
 echo "raptor-desk: applying database migrations"
 python manage.py migrate --noinput
 
+echo "raptor-desk: safety gate (production never starts with demo credentials)"
+python manage.py safety_gate
+
 echo "raptor-desk: seeding (demo profile loads the official fixtures)"
 python manage.py seed
 

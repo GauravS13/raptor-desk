@@ -447,6 +447,49 @@ def event_results(request: HttpRequest, event_id: str, method: str = "additive")
     )
 
 
+class KingmakerOut(Schema):
+    judge_id: str
+    reviews: int
+    entered: list[str]
+    left: list[str]
+    winner_before: str
+    winner_after: str
+
+
+class KingmakersOut(Schema):
+    event_id: str
+    method: str
+    prize_places: int
+    kingmakers: list[KingmakerOut]
+
+
+@router.get("/events/{event_id}/kingmakers", response=KingmakersOut)
+@policy(event_policies.EVENTS_MANAGE)
+def event_kingmakers(
+    request: HttpRequest, event_id: str, method: str = "additive"
+) -> KingmakersOut:
+    """Judges whose removal, alone, would change the prize places or the winner."""
+    event = get_event(event_id)
+    computed = results_service.compute(event, method=method, bootstrap=0)
+    places = deliberation.prize_places(event)
+    return KingmakersOut(
+        event_id=event_id,
+        method=computed.method,
+        prize_places=places,
+        kingmakers=[
+            KingmakerOut(
+                judge_id=k.judge,
+                reviews=k.reviews,
+                entered=list(k.entered),
+                left=list(k.left),
+                winner_before=k.winner_before,
+                winner_after=k.winner_after,
+            )
+            for k in results_service.kingmakers(computed, places)
+        ],
+    )
+
+
 # --- Measure, Doubt, Ask -----------------------------------------------------------
 
 

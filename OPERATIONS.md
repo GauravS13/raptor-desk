@@ -147,7 +147,7 @@ Per event, in **Settings**:
 
 ## Going to production
 
-1. Start from an empty volume with `RD_PROFILE=production`.
+1. Start from an empty volume with `RD_PROFILE=production`. The portal refuses to start in this profile while demo credentials are in the database (fixed seed tokens, or demo accounts that still accept the public demo password), so a volume seeded for the demo cannot go live by accident. `python src/manage.py safety_gate` runs the same check by hand.
 2. Create the first administrator:
    ```bash
    docker compose exec app python src/manage.py createsuperuser

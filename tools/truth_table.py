@@ -130,8 +130,17 @@ def render(root: Path = ROOT) -> str:
             f"{_count(official, tier)} | {_count(extended, tier)} | "
             f"{status(tier, claimed, checks)} |"
         )
-    out += ["", "| Check | Report | Result |", "|---|---|---|"]
+    passed = sum(c.result == "PASS" for c in checks)
+    out += [
+        "",
+        "<details>",
+        f"<summary><b>Every check, one by one</b>: {passed} of {len(checks)} pass</summary>",
+        "",
+        "| Check | Report | Result |",
+        "|---|---|---|",
+    ]
     out += [f"| {c.tier} {c.name} | {c.report} | {c.result} |" for c in checks]
+    out += ["", "</details>"]
     out += ["", "| Official file | SHA-256 | |", "|---|---|---|"]
     for name, expected in OFFICIAL_FILES.items():
         path = root / name

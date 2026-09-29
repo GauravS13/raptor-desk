@@ -52,10 +52,16 @@ jobs:
           exit 1
       - name: Smoke test
         run: curl -fsS http://localhost:8080/healthz
-      - name: Official acceptance checker (T1, T2)
+      - name: Official checker and fixtures are the published files
         run: |
-          python3 tools/run.py .dogfood.toml --fixtures data/fixtures.json | tee report.txt
+          echo "aa98963841bc8e18e8e5d76f0499697c093dd3c0055f9d73a459f592f4dcf09d  tools/run.py" | sha256sum -c
+          echo "252896bc45d49fca69ad413be40c6bfde9d9b9f9dd8db702b3ff74eaaa181121  data/fixtures.json" | sha256sum -c
+      - name: Official acceptance checker (T1, T2), identical to the committed report
+        run: |
+          python3 tools/run.py .dogfood.toml --fixtures data/fixtures.json > report.txt
+          cat report.txt
           grep -q "verified T1 T2" report.txt
+          diff -u acceptance-report.txt report.txt
       - name: Extended acceptance checker (T3, T4)
         run: |
           python3 tools/run_extended.py .dogfood-extended.toml | tee extended.txt

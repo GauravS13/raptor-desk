@@ -14,7 +14,7 @@ from apps.events.models import Event
 from apps.judging import repositories
 from apps.judging.scoring import engine_criteria, latest_reviews, score_map
 from apps.submissions.models import Project
-from scoring_engine import weighting
+from scoring_engine import influence, weighting
 from scoring_engine.normalization import METHODS, Evaluation, Observation, evaluate
 
 DEFAULT_CUTOFFS = (1, 2, 3, 5)
@@ -115,3 +115,9 @@ def as_rows(results: EventResults) -> list[dict[str, object]]:
             }
         )
     return rows
+
+
+def kingmakers(results: EventResults, places: int) -> list[influence.Influence]:
+    """Judges whose removal, alone, would change the prize places or the winner."""
+    ranked = [o for o in results.observations if o.project not in results.gated_out]
+    return influence.kingmakers(ranked, method=results.method, places=places)

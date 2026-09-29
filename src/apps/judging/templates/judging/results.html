@@ -118,6 +118,33 @@
 </div>
 {% if gated_out %}<p class="muted">Not ranked (gate not passed): {{ gated_out|join:", " }}</p>{% endif %}
 
+<section class="kingmakers" aria-labelledby="kingmakers">
+  <h2 id="kingmakers">Kingmaker check <small class="muted">does one judge decide a prize?</small></h2>
+  <p class="muted">Each judge's reviews are removed in turn and the ranking refitted. A judge listed here decides, alone,
+    who holds the top {{ prize_places }} or who comes first. That is not an accusation: it marks a prize that rests on
+    one opinion. Ask for more reviews above, or settle it in deliberation with a reason on the record.</p>
+  {% if kingmakers %}
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th scope="col">Without judge</th><th scope="col">Reviews</th><th scope="col">Enters the top {{ prize_places }}</th><th scope="col">Leaves it</th><th scope="col">First place</th></tr></thead>
+    <tbody>
+    {% for k in kingmakers %}
+      <tr>
+        <td>{{ judge_names|get_item:k.judge|default:k.judge }} <small class="muted">{{ k.judge }}</small></td>
+        <td>{{ k.reviews }}</td>
+        <td>{% for p in k.entered %}<span class="tag ok">{{ project_names|get_item:p|default:p }}</span> {% empty %}<span class="muted">none</span>{% endfor %}</td>
+        <td>{% for p in k.left %}<span class="tag bad">{{ project_names|get_item:p|default:p }}</span> {% empty %}<span class="muted">none</span>{% endfor %}</td>
+        <td>{% if k.changes_winner %}<span class="tag warn">{{ project_names|get_item:k.winner_before|default:k.winner_before }} → {{ project_names|get_item:k.winner_after|default:k.winner_after }}</span>{% else %}<span class="muted">unchanged</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p><span class="tag ok">No kingmaker</span> Removing any one judge leaves the top {{ prize_places }} and the winner unchanged.</p>
+  {% endif %}
+</section>
+
 <section aria-labelledby="pairwise">
   <h2 id="pairwise">Pairwise mode <small class="muted">Bradley–Terry</small></h2>
   {% if pairwise.total %}

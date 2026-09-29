@@ -22,12 +22,12 @@
   </g>
   <text x="280" y="160" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="76" font-weight="700" fill="#f8fafc">Raptor Desk</text>
   <text x="282" y="214" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="30" fill="#cbd5e1">The hackathon judging desk for DOGFOOD 2026</text>
-  <g font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="20" fill="#e2e8f0">
-    <rect x="282" y="238" width="170" height="36" rx="18" fill="#10b981" fill-opacity="0.18" stroke="#10b981" stroke-opacity="0.5" />
-    <text x="367" y="262" text-anchor="middle">T1 to T4 verified</text>
-    <rect x="466" y="238" width="190" height="36" rx="18" fill="#f97316" fill-opacity="0.18" stroke="#f97316" stroke-opacity="0.5" />
-    <text x="561" y="262" text-anchor="middle">4 bonus challenges</text>
-    <rect x="670" y="238" width="214" height="36" rx="18" fill="#6366f1" fill-opacity="0.18" stroke="#818cf8" stroke-opacity="0.5" />
-    <text x="777" y="262" text-anchor="middle">signed, verifiable results</text>
+  <g font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="19" fill="#e2e8f0">
+    <rect x="282" y="238" width="272" height="36" rx="18" fill="#10b981" fill-opacity="0.18" stroke="#10b981" stroke-opacity="0.5" />
+    <text x="418" y="262" text-anchor="middle">T1 T2: official checker 7/7</text>
+    <rect x="566" y="238" width="296" height="36" rx="18" fill="#10b981" fill-opacity="0.18" stroke="#10b981" stroke-opacity="0.5" />
+    <text x="714" y="262" text-anchor="middle">T3 T4: extended checker 32/32</text>
+    <rect x="874" y="238" width="212" height="36" rx="18" fill="#f97316" fill-opacity="0.18" stroke="#f97316" stroke-opacity="0.5" />
+    <text x="980" y="262" text-anchor="middle">4/4 bonus challenges</text>
   </g>
 </svg>
