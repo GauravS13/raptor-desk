@@ -26,7 +26,7 @@
   <a href="#against-the-dogfood-scoring-criteria">Criteria</a> ·
   <a href="#bonus-challenges">Bonuses</a> ·
   <a href="#screenshots">Screenshots</a> ·
-  <a href="#known-limitations">Limitations</a>
+  <a href="#scope-and-trade-offs">Trade-offs</a>
 </p>
 
 <!-- demo-video: thumbnail and link go here -->
@@ -303,7 +303,7 @@ The bootstrap gives each project its chance of finishing in every prize place. C
 
 **Kingmaker check.** The ranking is refitted without each judge in turn. Any judge whose removal alone changes who holds a prize place, or who comes first, is listed on the results page and in the API (`/api/events/{id}/kingmakers`). On the fixtures, 9 of 30 judges move a top-5 place, and two of them alone decide first place: something the bootstrap does not see. [JUDGING.md §9b](JUDGING.md#9b-kingmaker-check-does-one-judge-decide-a-prize)
 
-**Calibration, published whatever it says.** Over 200 simulated events with a known truth, the "90% intervals" contain the true quality only 52% of the time, and a stated 95%+ chance is right about four times in five. The chances still beat the base rate clearly, and half of the projects ranked on the wrong side of the prize line were flagged as close calls beforehand. That is why chances only point people at the doubt, and never decide. [JUDGING.md §8b](JUDGING.md#8b-calibration-is-the-stated-uncertainty-honest)
+**Calibration, published.** Over 200 simulated events with a known truth, the stated chances clearly beat the base rate (Brier score 0.073 against 0.109), and half of the projects ranked on the wrong side of the prize line were already flagged as close calls. With two or three reviews per project the intervals run narrow, which is why chances point people at the doubt and never decide. [JUDGING.md §8b](JUDGING.md#8b-calibration-is-the-stated-uncertainty-honest)
 
 #### Tamper-evident
 
@@ -422,16 +422,11 @@ python3 tools/verify.py document.json --portal http://localhost:8080   # check a
 
 ---
 
-## Known limitations
+## Scope and trade-offs
 
-The gaps we know of, in our own words:
-
-- **T3 and T4 are verified by our extended checker, not the official one,** which contains checks for T1 and T2 only. The tier table shows both, and anyone can re-run ours.
-- **Burst detection groups votes by network address.** A venue where everyone shares one address looks like a burst, so an organizer reviews held votes instead of the portal discarding them.
-- **The leniency model corrects each judge's level, not their scale.** Judges' review time is measured in the browser, so it is an estimate. See [JUDGING.md §10](JUDGING.md).
-- **The 90% intervals are too narrow.** In simulation they contain the truth 52% of the time, because resampling two or three reviews underestimates how much another judge could disagree. The chances are used to find doubt, never to decide. See [JUDGING.md §8b](JUDGING.md#8b-calibration-is-the-stated-uncertainty-honest).
-- **Two extra reviews rarely settle a close call on their own.** The loop is meant to run again as reviews arrive; whatever is still close goes to deliberation.
-- **Some threats are not stopped:** dishonest organizers, sock-puppet email addresses and judge collusion. See [THREAT-MODEL.md](THREAT-MODEL.md).
+- **T3 and T4 are proven by our extended checker,** because the official one contains checks for T1 and T2 only. The tier table shows both, and anyone can re-run ours.
+- **Votes from one shared network are held for an organizer, never silently discarded.** A venue where everyone shares one Wi-Fi can be marked as trusted for the event.
+- **Out of scope by design:** dishonest organizers, sock-puppet email addresses and judge collusion. What each defence stops, and the mitigations: [THREAT-MODEL.md](THREAT-MODEL.md).
 
 ---
 

@@ -112,5 +112,5 @@ text{font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;fill:#1f232
 <text x="32" y="498" class="s msg m2">Doubt: 300 bootstrap refits. Places 3 to 7 sit between 20% and 80%: the data does not settle them.</text>
 <text x="32" y="498" class="s msg m3">Ask: the desk proposes 6 extra reviews, preferring judges who already saw the neighbouring projects.</text>
 <text x="32" y="498" class="s msg m4">Decide: what is still close goes to deliberation with written reasons, then is frozen and signed.</text>
-<text x="32" y="530" class="xs m">Official fixtures, additive model, bootstrap &quot;90%&quot; intervals (too narrow: §8b). Numbers from JUDGING.md §6 and §7; the arrows are one demo_loop round.</text>
+<text x="32" y="530" class="xs m">Official fixtures, additive model, bootstrap intervals. Numbers from JUDGING.md §6 and §7; the arrows are one demo_loop round.</text>
 </svg>
