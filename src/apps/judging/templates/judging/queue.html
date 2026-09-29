@@ -11,6 +11,7 @@
 <section aria-labelledby="ev-{{ group.event.id }}">
   <h2 id="ev-{{ group.event.id }}">{{ group.event.name }}</h2>
   <progress value="{{ group.done }}" max="{{ group.items|length }}" aria-label="Reviews done">{{ group.done }} of {{ group.items|length }}</progress>
+  {% if group.event.phase == "judging" and group.items|length > 1 %}<p><a href="/judge/events/{{ group.event.id }}/pairwise" role="button" class="secondary">Compare pairs (A or B?)</a></p>{% endif %}
   <p class="muted">{{ group.done }} of {{ group.items|length }} done{% if group.event.judging_closes_at %} · judging closes {{ group.event.judging_closes_at|date:"Y-m-d H:i" }} UTC{% endif %}</p>
   <ol>
     {% for item in group.items %}

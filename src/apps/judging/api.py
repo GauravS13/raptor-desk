@@ -15,6 +15,7 @@ from apps.judging import (
     exports,
     feedback,
     ledger,
+    pairwise,
     passport,
     publishing,
     repositories,
@@ -932,3 +933,136 @@ def verify_document(request: HttpRequest, document: SignedDocumentIn) -> Documen
     """Check any signed document from this portal: snapshot, protocol, certificate or record."""
     result = credentials.describe(document.dict())
     return DocumentCheckOut(**{**result, "valid": result["valid"] == "yes"})
+
+
+# --- Recusal and pairwise mode -----------------------------------------------------------------
+
+JUDGE_IN_EVENT = define(
+    "judging.judge_in_event",
+    Rule(roles=frozenset({"judge"}), description="Judges of this event, for their own work."),
+)
+
+
+class RecuseIn(Schema):
+    reason: str
+
+
+class RecuseOut(Schema):
+    team_id: str
+    withdrawn: int
+    replacements_proposed: int
+
+
+@router.post("/judge/assignments/{assignment_id}/recuse", response=RecuseOut)
+@api_action("judging.recuse")
+@policy(JUDGE_SELF)
+def recuse(request: HttpRequest, assignment_id: str, payload: RecuseIn) -> RecuseOut:
+    """Declare a conflict with this project's team: withdrawn, and a replacement proposed."""
+    result = services.recuse(get_principal(request), assignment_id, payload.reason)
+    return RecuseOut(
+        team_id=result.conflict.team_id,
+        withdrawn=result.withdrawn,
+        replacements_proposed=len(result.replacements),
+    )
+
+
+class PairProjectOut(Schema):
+    id: str
+    name: str
+    tagline: str
+
+
+class NextPairOut(Schema):
+    a: PairProjectOut
+    b: PairProjectOut
+    done: int
+    possible: int
+
+
+class CompareIn(Schema):
+    a: str
+    b: str
+    outcome: str = Field(..., description="a, b or tie, for the pair as shown")
+
+
+class CompareOut(Schema):
+    id: str
+    status: str
+
+
+class StandingOut(Schema):
+    project_id: str
+    name: str
+    rank: int
+    strength: float
+    comparisons: int
+    wins: float
+    ci_low: float
+    ci_high: float
+    p_top: dict[int, float]
+
+
+class PairwiseOut(Schema):
+    event_id: str
+    comparisons: int
+    judges: int
+    agreement_with_scores: float | None
+    standings: list[StandingOut]
+
+
+def _pair_project(project: Any) -> PairProjectOut:
+    version = project.canonical_version
+    return PairProjectOut(
+        id=project.pk,
+        name=version.name if version else project.pk,
+        tagline=version.tagline if version else "",
+    )
+
+
+@router.get("/events/{event_id}/pairwise/next", response={200: NextPairOut, 204: None})
+@policy(JUDGE_IN_EVENT)
+def next_pair(request: HttpRequest, event_id: str) -> Any:
+    """The most informative pair of your assigned projects you have not compared yet."""
+    found = pairwise.next_for(get_principal(request), get_event(event_id))
+    if found is None:
+        return Status(204, None)
+    return NextPairOut(
+        a=_pair_project(found.a), b=_pair_project(found.b), done=found.done, possible=found.possible
+    )
+
+
+@router.post("/events/{event_id}/pairwise", response={201: CompareOut})
+@api_action("judging.compare")
+@policy(JUDGE_IN_EVENT)
+def compare(request: HttpRequest, event_id: str, payload: CompareIn) -> Status[CompareOut]:
+    item = pairwise.record(
+        get_principal(request), get_event(event_id), payload.a, payload.b, payload.outcome
+    )
+    return Status(201, CompareOut(id=item.pk, status="recorded"))
+
+
+@router.get("/events/{event_id}/pairwise/standings", response=PairwiseOut)
+@policy(event_policies.EVENTS_MANAGE)
+def pairwise_standings(request: HttpRequest, event_id: str) -> PairwiseOut:
+    """Bradley-Terry standings from judges' comparisons, beside the score-based ranking."""
+    found = pairwise.table(get_event(event_id))
+    return PairwiseOut(
+        event_id=event_id,
+        comparisons=found.total,
+        judges=found.judges,
+        agreement_with_scores=found.agreement,
+        standings=[
+            StandingOut(
+                project_id=s.project,
+                name=found.names.get(s.project, s.project),
+                rank=s.rank,
+                strength=s.strength,
+                comparisons=s.comparisons,
+                wins=s.wins,
+                ci_low=s.ci_low,
+                ci_high=s.ci_high,
+                p_top=s.p_top,
+            )
+            for s in found.standings
+        ],
+    )

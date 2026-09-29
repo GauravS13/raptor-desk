@@ -72,6 +72,37 @@ def append(review: Review, kind: str) -> ScoreEvent:
     )
 
 
+def append_comparison(comparison: Any) -> ScoreEvent:
+    """Add an entry for a pairwise comparison, chained and signed like any other."""
+    last = ScoreEvent.objects.filter(event_id=comparison.event_id).order_by("-seq").first()
+    seq = last.seq + 1 if last else 1
+    prev_hash = last.entry_hash if last else signing.GENESIS_HASH
+    payload: dict[str, Any] = {
+        "event": comparison.event_id,
+        "seq": seq,
+        "kind": "pairwise",
+        "comparison": comparison.pk,
+        "judge": comparison.judge_id,
+        "pair": [comparison.project_a_id, comparison.project_b_id],
+        "outcome": comparison.outcome,
+        "at": comparison.created_at.isoformat(),
+    }
+    payload_hash = signing.payload_hash(payload)
+    entry_hash = signing.chain_hash(prev_hash, payload_hash)
+    signature = signing.sign({"entry_hash": entry_hash})
+    return ScoreEvent.objects.create(
+        event_id=comparison.event_id,
+        seq=seq,
+        review_id=comparison.pk,
+        payload=payload,
+        payload_hash=payload_hash,
+        prev_hash=prev_hash,
+        entry_hash=entry_hash,
+        signature=signature.value,
+        key_id=signature.key_id,
+    )
+
+
 @dataclass(frozen=True)
 class Verification:
     valid: bool

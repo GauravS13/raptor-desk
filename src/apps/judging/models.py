@@ -47,6 +47,10 @@ def _credential_id() -> str:
     return new_id("crd")
 
 
+def _comparison_id() -> str:
+    return new_id("pwc")
+
+
 class JudgeTrack(models.Model):
     """Which tracks a judge covers in an event. A judge never sees another track's projects."""
 
@@ -407,3 +411,41 @@ class Credential(models.Model):
     def label(self) -> str:
         prefix = {"protocol": "P", "certificate": "C", "participation": "R"}[self.kind]
         return f"{prefix}-{self.number:06d}"
+
+
+class PairwiseOutcome(models.TextChoices):
+    A = "a", "The first project is stronger"
+    B = "b", "The second project is stronger"
+    TIE = "tie", "Too close to call"
+
+
+class PairwiseComparison(models.Model):
+    """A judge's answer to "which of these two is stronger?". Append-only.
+
+    ``project_a`` always has the smaller id, so each judge compares each pair once.
+    """
+
+    id = models.CharField(primary_key=True, max_length=40, default=_comparison_id, editable=False)
+    event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="comparisons")
+    judge = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="comparisons"
+    )
+    project_a = models.ForeignKey("submissions.Project", on_delete=models.CASCADE, related_name="+")
+    project_b = models.ForeignKey("submissions.Project", on_delete=models.CASCADE, related_name="+")
+    outcome = models.CharField(max_length=3, choices=PairwiseOutcome.choices)
+    created_at = models.DateTimeField(default=clock.now)
+
+    class Meta:
+        ordering: ClassVar[list[str]] = ["created_at", "id"]
+        constraints: ClassVar[list[models.BaseConstraint]] = [
+            models.UniqueConstraint(
+                fields=["judge", "project_a", "project_b"], name="one_comparison_per_pair"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(project_a__lt=models.F("project_b")),
+                name="comparison_pair_ordered",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.project_a_id} vs {self.project_b_id}: {self.outcome}"

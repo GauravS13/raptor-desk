@@ -7,6 +7,7 @@ from django import forms
 from django.contrib import messages
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
+from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from apps.accounts.models import User
@@ -19,13 +20,14 @@ from apps.judging import (
     exports,
     feedback,
     ledger,
+    pairwise,
     passport,
     publishing,
     services,
     snapshots,
 )
 from apps.judging import results as results_service
-from apps.judging.api import FEEDBACK, JUDGE_SELF, PUBLIC_VERIFY, SIGNED_IN
+from apps.judging.api import FEEDBACK, JUDGE_IN_EVENT, JUDGE_SELF, PUBLIC_VERIFY, SIGNED_IN
 from apps.judging.models import Assignment
 from apps.submissions import services as submission_services
 from apps.submissions.models import Project
@@ -301,6 +303,7 @@ def organizer_results(request: HttpRequest, event_id: str) -> HttpResponse:
         "judges": judges,
         "gated_out": computed.gated_out,
         "doubt": doubt,
+        "pairwise": pairwise.table(event),
         "project_names": doubt.results.names,
         "judge_names": names,
         "can_ask": event.phase == "judging",
@@ -577,3 +580,88 @@ def verify_form(request: HttpRequest) -> HttpResponse:
             except ValueError:
                 result = {"valid": "no", "reason": "that is not JSON"}
     return render(request, "judging/verify_form.html", {"result": result})
+
+
+@require_POST
+@ui_action("review.save")
+@policy(JUDGE_SELF)
+def review_autosave(request: HttpRequest, assignment_id: str) -> HttpResponse:
+    """Save a draft without leaving the page. Called by the review form every few seconds."""
+    principal = get_principal(request)
+    item = services.own_assignment(principal, assignment_id)
+    scores = {}
+    for criterion in item.event.criteria.all():
+        raw = request.POST.get(f"c_{criterion.key}", "").strip()
+        if raw.isdigit():
+            scores[criterion.key] = int(raw)
+    current = services.current_review(item)
+    if current is not None and current.status == "submitted":
+        return JsonResponse({"saved": False, "reason": "already submitted"}, status=409)
+    try:
+        services.save_review(
+            principal,
+            item,
+            scores,
+            request.POST.get("comment", ""),
+            request.POST.get("improvement", ""),
+            submit=False,
+            active_seconds=int(request.POST.get("active_seconds") or 0),
+        )
+    except ApiError as exc:
+        return JsonResponse({"saved": False, "reason": exc.message}, status=exc.status)
+    return JsonResponse({"saved": True, "at": timezone.now().strftime("%H:%M:%S")})
+
+
+@require_POST
+@ui_action("judging.recuse")
+@policy(JUDGE_SELF)
+def review_recuse(request: HttpRequest, assignment_id: str) -> HttpResponse:
+    try:
+        result = services.recuse(
+            get_principal(request), assignment_id, request.POST.get("reason", "")
+        )
+    except ApiError as exc:
+        if exc.status == 404:
+            raise
+        messages.error(request, exc.message)
+        return HttpResponseRedirect(f"/judge/review/{assignment_id}")
+    messages.success(
+        request,
+        "Recusal recorded. The project has left your queue"
+        + (
+            "; a replacement judge has been proposed to the organizer."
+            if result.replacements
+            else "; the organizer will find a replacement."
+        ),
+    )
+    return HttpResponseRedirect("/judge")
+
+
+@require_http_methods(["GET", "POST"])
+@ui_action("judging.compare")
+@policy(JUDGE_IN_EVENT)
+def pairwise_page(request: HttpRequest, event_id: str) -> HttpResponse:
+    event = get_event(event_id)
+    principal = get_principal(request)
+    if request.method == "POST":
+        try:
+            pairwise.record(
+                principal,
+                event,
+                request.POST.get("a", ""),
+                request.POST.get("b", ""),
+                request.POST.get("outcome", ""),
+            )
+        except ApiError as exc:
+            if exc.status == 404:
+                raise
+            messages.error(request, exc.message)
+        return HttpResponseRedirect(f"/judge/events/{event_id}/pairwise")
+    found = pairwise.next_for(principal, event) if event.phase == "judging" else None
+    context = {
+        "event": event,
+        "pair": found,
+        "blind": event.blind_judging,
+        "open": event.phase == "judging",
+    }
+    return render(request, "judging/pairwise.html", context)

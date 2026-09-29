@@ -263,6 +263,87 @@ def queue(principal: Principal, event_id: str | None = None) -> list[Assignment]
     return list(items.order_by("event_id", "queue_position"))
 
 
+@dataclass
+class Recusal:
+    conflict: Conflict
+    withdrawn: int
+    replacements: list[Assignment]
+
+
+@transaction.atomic
+def recuse(principal: Principal, assignment_id: str, reason: str) -> Recusal:
+    """A judge declares a conflict with a project's team in one click.
+
+    The conflict is recorded, every open assignment of this judge to that team
+    is withdrawn, and replacement judges are proposed for the organizer to
+    publish (never assigned silently). A judge who already submitted a review
+    of the project must ask the organizer, so that scores are not quietly lost.
+    """
+    item = own_assignment(principal, assignment_id)
+    event = item.event
+    reason = reason.strip()
+    if len(reason) < 5:
+        raise unprocessable("Say briefly why, for example: 'I mentor this team'.")
+    if item.reviews.filter(status="submitted").exists():
+        raise conflict(
+            "review_submitted",
+            "You already submitted a review of this project; ask the organizer to handle it.",
+        )
+    record, _ = Conflict.objects.get_or_create(
+        event=event,
+        judge_id=principal.user_id,
+        team_id=item.project.team_id,
+        defaults={"reason": reason, "declared_by_id": principal.user_id or ""},
+    )
+    open_items = Assignment.objects.filter(
+        event=event,
+        judge_id=principal.user_id,
+        project__team_id=item.project.team_id,
+        status__in=["proposed", "active"],
+    )
+    affected = list(open_items.values_list("project_id", flat=True))
+    withdrawn = open_items.update(status="withdrawn")
+
+    existing = set(
+        Assignment.objects.filter(event=event)
+        .exclude(status="withdrawn")
+        .values_list("judge_id", "project_id")
+    )
+    tracks = tracks_of(event)
+    targets = [p for p in _project_inputs(event) if p.id in affected]
+    plan = planner.plan(
+        targets,
+        [planner.JudgeInput(judge, tracks[judge]) for judge in sorted(tracks)],
+        reviews_per_project=event.reviews_per_project,
+        max_load=event.max_load_per_judge,
+        existing=existing | {(principal.user_id, p) for p in affected},
+        conflicts=conflict_pairs(event),
+    )
+    replacements = [
+        Assignment.objects.create(
+            event=event,
+            judge_id=p.judge,
+            project_id=p.project,
+            source="auto",
+            status="proposed",
+            reason=f"Replacement after a recusal: {p.reason}"[:300],
+            queue_position=random_queue_position(),
+            created_by_id=principal.user_id or "",
+        )
+        for p in plan.proposals
+    ]
+    audit.record(
+        "judging.recused",
+        f"Judge recused from team {item.project.team_id}: {reason}",
+        actor=principal,
+        actor_role="judge",
+        event_id=event.pk,
+        target=record,
+        details={"withdrawn": withdrawn, "replacements": [a.judge_id for a in replacements]},
+    )
+    return Recusal(record, withdrawn, replacements)
+
+
 def own_assignment(principal: Principal, assignment_id: str) -> Assignment:
     item = (
         Assignment.objects.select_related("event", "project__canonical_version", "project__team")

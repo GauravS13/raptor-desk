@@ -42,6 +42,8 @@ GUARD_TRIGGERS = {
     "judging_scoreevent_no_delete": "score ledger",
     "judging_credential_no_update": "signed documents",
     "judging_credential_no_delete": "signed documents",
+    "judging_pairwisecomparison_no_update": "pairwise comparisons",
+    "judging_pairwisecomparison_no_delete": "pairwise comparisons",
 }
 OUTBOX_OVERDUE = timedelta(minutes=5)
 BACKUP_MAX_AGE = timedelta(hours=24)

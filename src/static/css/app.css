@@ -283,3 +283,20 @@ tr.prize-line td {
   border-bottom: 3px solid var(--pico-primary);
 }
 
+/* Pairwise mode: two projects side by side. */
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 700px) {
+  .pair {
+    grid-template-columns: 1fr;
+  }
+}
+
+.recuse {
+  margin-top: 1.5rem;
+}
+

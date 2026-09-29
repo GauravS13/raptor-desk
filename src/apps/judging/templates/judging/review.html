@@ -27,7 +27,8 @@
     {% if error %}<p class="notice error" role="alert">{{ error }}</p>{% endif %}
     {% if review.status == "submitted" %}<p class="notice success">Submitted. You can amend it while judging is open.</p>{% endif %}
     {% if open %}
-    <form method="post" action="/judge/review/{{ item.id }}" id="review-form" data-review-form>
+    <form method="post" action="/judge/review/{{ item.id }}" id="review-form" data-review-form
+          data-autosave="/judge/review/{{ item.id }}/autosave">
       {% csrf_token %}
       <input type="hidden" name="active_seconds" value="0" data-active-seconds>
       {% for row in rows %}
@@ -51,12 +52,23 @@
       <textarea id="comment" name="comment" rows="4">{{ review.comment|default:"" }}</textarea>
       <label for="improvement">One thing they should do next</label>
       <textarea id="improvement" name="improvement" rows="2">{{ review.improvement|default:"" }}</textarea>
-      <p class="muted"><small>Keyboard: focus a criterion and press a number to score it. Ctrl+Enter submits.</small></p>
+      <p class="muted"><small>Keyboard: focus a criterion and press a number to score it. Ctrl+Enter submits.
+        Drafts save themselves every few seconds. <span data-autosave-status role="status" aria-live="polite"></span></small></p>
       <div class="grid">
         <button type="submit" name="save" class="secondary">Save draft</button>
         <button type="submit" name="submit" data-submit>Submit review</button>
       </div>
     </form>
+    <details class="recuse">
+      <summary>I have a conflict of interest with this team</summary>
+      <form method="post" action="/judge/review/{{ item.id }}/recuse">
+        {% csrf_token %}
+        <label for="recuse-reason">Why (kept in the audit trail, never shown to the team)</label>
+        <input id="recuse-reason" name="reason" type="text" required minlength="5" placeholder="For example: I mentor this team">
+        <button type="submit" class="secondary">Recuse me from this team</button>
+      </form>
+      <p class="muted"><small>The project leaves your queue at once, and a replacement judge is proposed to the organizer.</small></p>
+    </details>
     {% else %}
       <p class="notice">Judging is not open, so reviews cannot be changed.</p>
     {% endif %}

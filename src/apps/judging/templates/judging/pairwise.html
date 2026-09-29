@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Compare pairs · {{ event.name }}{% endblock %}
+
+{% block content %}
+<p><a href="/judge">← Your reviews</a></p>
+<hgroup>
+  <h1>Which is stronger?</h1>
+  <p>{{ event.name }}: pairwise mode</p>
+</hgroup>
+<p class="muted">Compare two projects you have reviewed. When a 1–5 scale feels arbitrary, "which of these two" is easier to
+  answer consistently. Answers go into a Bradley–Terry model the organizers see beside the scores. Pairs that decide close
+  prize places come first.</p>
+
+{% if not open %}
+  <p class="notice">Judging is not open.</p>
+{% elif not pair %}
+  <p class="notice success">No pairs left: you have compared every pair of your projects. Thank you.</p>
+{% else %}
+  <p><progress value="{{ pair.done }}" max="{{ pair.possible }}" aria-label="Pairs compared">{{ pair.done }} of {{ pair.possible }}</progress>
+    <small class="muted">{{ pair.done }} of {{ pair.possible }} pairs compared</small></p>
+  <form method="post" action="/judge/events/{{ event.id }}/pairwise" data-pairwise-form>
+    {% csrf_token %}
+    <input type="hidden" name="a" value="{{ pair.a.id }}">
+    <input type="hidden" name="b" value="{{ pair.b.id }}">
+    <div class="pair">
+      <article>
+        <header><strong>A · {{ pair.a.canonical_version.name }}</strong></header>
+        <p>{{ pair.a.canonical_version.tagline }}</p>
+        {% if not blind %}<p class="muted">{{ pair.a.team.name }}</p>{% endif %}
+        <p><a href="/projects/{{ pair.a.id }}" target="_blank" rel="noopener">Open the project</a></p>
+      </article>
+      <article>
+        <header><strong>B · {{ pair.b.canonical_version.name }}</strong></header>
+        <p>{{ pair.b.canonical_version.tagline }}</p>
+        {% if not blind %}<p class="muted">{{ pair.b.team.name }}</p>{% endif %}
+        <p><a href="/projects/{{ pair.b.id }}" target="_blank" rel="noopener">Open the project</a></p>
+      </article>
+    </div>
+    <div class="grid">
+      <button type="submit" name="outcome" value="a" data-key="ArrowLeft">← A is stronger</button>
+      <button type="submit" name="outcome" value="tie" class="secondary" data-key="ArrowDown">↓ Too close to call</button>
+      <button type="submit" name="outcome" value="b" data-key="ArrowRight">B is stronger →</button>
+    </div>
+    <p class="muted"><small>Keyboard: ← A, → B, ↓ too close.</small></p>
+  </form>
+{% endif %}
+{% endblock %}

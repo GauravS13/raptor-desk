@@ -118,6 +118,28 @@
 </div>
 {% if gated_out %}<p class="muted">Not ranked (gate not passed): {{ gated_out|join:", " }}</p>{% endif %}
 
+<section aria-labelledby="pairwise">
+  <h2 id="pairwise">Pairwise mode <small class="muted">Bradley–Terry</small></h2>
+  {% if pairwise.total %}
+    <p>{{ pairwise.total }} comparison{{ pairwise.total|pluralize }} by {{ pairwise.judges }} judge{{ pairwise.judges|pluralize }}.
+      {% if pairwise.agreement is not None %}Agreement with the score-based ranking on the same projects: Spearman ρ = {{ pairwise.agreement|floatformat:2 }}.{% endif %}</p>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">Rank</th><th scope="col">Project</th><th scope="col">Strength (log)</th><th scope="col">90% interval</th><th scope="col">Compared</th><th scope="col">Wins</th></tr></thead>
+      <tbody>
+      {% for s in pairwise.standings %}
+        <tr><td>{{ s.rank }}</td><td>{{ pairwise.names|get_item:s.project|default:s.project }} <small class="muted">{{ s.project }}</small></td>
+          <td>{{ s.strength|floatformat:2 }}</td><td>{{ s.ci_low|floatformat:2 }} to {{ s.ci_high|floatformat:2 }}</td>
+          <td>{{ s.comparisons }}</td><td>{{ s.wins|floatformat:"-1" }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  {% else %}
+    <p class="muted">No comparisons yet. Judges find "Compare pairs" in their queue; pairs involving these close calls are offered first.</p>
+  {% endif %}
+</section>
+
 <section aria-labelledby="judges">
   <h2 id="judges">Judge diagnostics</h2>
   <p class="muted">Leniency is the judge's estimated offset: negative means harsh, positive means generous. Misfit is how far their scores sit from the consensus after that offset.</p>
