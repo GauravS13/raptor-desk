@@ -32,7 +32,7 @@
 <!-- demo-video: thumbnail and link go here -->
 
 > [!IMPORTANT]
-> **This README cannot overclaim.** The tier table is generated from the two committed checker reports by [`tools/truth_table.py`](tools/truth_table.py), and CI fails if the README and the reports disagree. The official checker and fixtures are byte-for-byte the published files: their SHA-256 hashes are in the [tier table](#tiers).
+> **This README cannot overclaim.** The tier table is generated from the two committed checker reports by [`tools/truth_table.py`](tools/truth_table.py), and CI fails if the README and the reports disagree. CI also re-runs the official checker against a fresh `docker compose up` and fails if its output differs from the committed report by a single byte. The official checker and fixtures are byte-for-byte the published files: their SHA-256 hashes are in the [tier table](#tiers).
 
 ---
 
@@ -43,13 +43,13 @@ DOGFOOD is scored on four criteria. Here is each one: what we claim, and how to 
 | Criterion | Weight | What we claim | Check it yourself |
 |---|:---:|---|---|
 | **Tier completion and correctness** | 40% | T1 to T4 claimed. T1 and T2: **official checker 7/7**. T3 and T4: **our extended checker 32/32**, with a positive control for every rejection. Every trap in the fixtures is named at boot | `python3 tools/run.py .dogfood.toml --fixtures data/fixtures.json`<br>`python3 tools/run_extended.py .dogfood-extended.toml`<br>[Fixture traps](#every-trap-in-the-fixtures) |
-| **Judging integrity** | 25% | Isolation enforced in the API, proven with curl. An additive judge-bias model that beats plain averaging in **96% of 200** simulated events. Close calls and kingmaker judges found, and settled with extra reviews or a recorded decision. Calibration published. Every score in a signed hash chain | [Curl proof](#isolation-with-curl)<br>Organizer → Sample Hack 2026 → **Results**<br>`manage.py demo_tamper` |
+| **Judging integrity** | 25% | Isolation enforced in the API, proven with curl. An additive judge-bias model that beats plain averaging in **96% of 200** simulated events. Close calls and kingmaker judges found, and settled with extra reviews or a recorded decision. Calibration published. Every score in a signed hash chain | [Curl proof](#isolation-with-curl)<br>Organizer → Sample Hack 2026 → **Results**<br>`GET /api/events/evt_01/kingmakers`<br>`manage.py demo_tamper` |
 | **Adoptability and operability** | 20% | `docker compose up`, offline, no `.env`. DOGFOOD 2026 itself is preloaded. Health report, verified backup and restore, CSV and whole-event export and import | `docker compose up`<br>`make doctor`<br>[OPERATIONS.md](OPERATIONS.md) |
 | **Code quality and innovation** | 15% | 369 tests, an architecture contract, a UI/API parity test, every decision written down with the alternatives rejected. The Measure → Doubt → Ask loop | `make check`<br>[DECISION-LOG.md](docs/DECISION-LOG.md) |
 | *Bonus challenges* (tie-breaks) | – | 4 of 4: normalization proof, pairwise Bradley–Terry, threat model, API first | [Bonus table](#bonus-challenges) |
 
 <p align="center">
-  <img src="docs/img/close-call-loop.svg" alt="The close-call loop on the official fixtures: corrected scores with 90% intervals, five prize places flagged as close calls, extra reviews asked for, and the chances moving" width="100%">
+  <img src="docs/img/close-call-loop.svg" alt="The close-call loop on the official fixtures: corrected scores with 90% intervals, five projects around the prize line flagged as close calls, extra reviews asked for, and the chances moving" width="100%">
 </p>
 
 <p align="center"><sub>The judging engine on the official fixtures. It measures, doubts its own ranking, asks for the reviews that would settle it, and leaves the rest to people, on the record.</sub></p>
@@ -133,7 +133,7 @@ data hygiene report for Sample Hack 2026 (evt_01):
   [thin_tracks] Developer tools (3), Open hardware (3)
 ```
 
-The fixed tokens and demo passwords exist only in the default `demo` profile. `RD_PROFILE=production` creates none of them, and `manage.py doctor` fails if any are present.
+The fixed tokens and demo passwords exist only in the default `demo` profile. `RD_PROFILE=production` creates none of them, and refuses to start while any are still in the database.
 </details>
 
 ### Evaluate in five minutes
@@ -142,7 +142,7 @@ The fixed tokens and demo passwords exist only in the default `demo` profile. `R
 - [ ] **Official checker:** `python3 tools/run.py .dogfood.toml --fixtures data/fixtures.json` gives 7 × PASS and `verified T1 T2`.
 - [ ] **Extended checker:** `python3 tools/run_extended.py .dogfood-extended.toml` gives 32 × PASS and `verified T3 T4`.
 - [ ] **Isolation:** run the [three curl calls](#isolation-with-curl). You get 403, 403 and 401.
-- [ ] **Normalization:** as the Organizer, open Sample Hack 2026 → **Results**. The raw-mean tie for first is resolved, prj_10 drops from 3rd to 7th, and the undecided prize places are flagged as close calls, with the judges to ask.
+- [ ] **Normalization:** as the Organizer, open Sample Hack 2026 → **Results**. The raw-mean tie for first is resolved, prj_10 drops from 3rd to 7th, and the undecided prize places are flagged as close calls, with the judges to ask. Further down, the kingmaker check shows that `jdg_04` and `jdg_15` each decide first place on their own.
 - [ ] **Judge console:** as Judge A, score with the number keys, submit with <kbd>Ctrl</kbd>+<kbd>Enter</kbd>, then **Compare pairs** with <kbd>←</kbd> <kbd>→</kbd> <kbd>↓</kbd>.
 - [ ] **Tamper evidence:** `docker compose exec app python src/manage.py demo_tamper` shows a direct database edit being caught.
 - [ ] **Participant:** as Priya, open **DOGFOOD 2026 (live demo)**, form a team, submit, then resubmit: you get version 2 of the same project.
@@ -241,7 +241,7 @@ Every step, with what to look for: [EVALUATE.md](EVALUATE.md).
 
 ### Tier completion and correctness (40%)
 
-- **Both reports are committed and regenerated in CI on every push:** [`acceptance-report.txt`](acceptance-report.txt) (official) and [`acceptance-extended-report.txt`](acceptance-extended-report.txt) (ours, for T3 and T4).
+- **Both reports are committed, and CI re-runs both checkers on every push:** [`acceptance-report.txt`](acceptance-report.txt) (official, which must match the fresh run byte for byte) and [`acceptance-extended-report.txt`](acceptance-extended-report.txt) (ours, for T3 and T4).
 - **The extended checker is built to be doubted.** It is one file, standard library only, in the official report format, and says on its first line that it is ours. It follows no redirects, and every "refused" check has a matching "allowed" check, so a portal that refuses everything cannot pass.
 
 #### Every trap in the fixtures
@@ -400,7 +400,7 @@ flowchart TB
 | Document | What it answers |
 |---|---|
 | [EVALUATE.md](EVALUATE.md) | How to check every scoring criterion in five minutes, including both checkers |
-| [JUDGING.md](JUDGING.md) | Assignment, scoring, normalization with proof, uncertainty, the close-call loop, pairwise mode, deliberation and publishing |
+| [JUDGING.md](JUDGING.md) | Assignment, scoring, normalization with proof, uncertainty and its calibration, the close-call loop, the kingmaker check, pairwise mode, deliberation and publishing |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | How the system fits together, and why |
 | [DATA-MODEL.md](DATA-MODEL.md) | Every table and its invariants, and how the fixtures are loaded |
 | [ACCESS-MATRIX.md](ACCESS-MATRIX.md) | Who can read what, generated from real responses |
