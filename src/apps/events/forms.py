@@ -6,6 +6,21 @@ from django import forms
 from apps.events.models import QuestionKind, VotingMode, VotingScheme, Weighting
 
 
+class CommaListField(forms.CharField):
+    """A list edited as comma-separated text."""
+
+    def __init__(self, **kwargs: Any) -> None:
+        kwargs.setdefault("required", False)
+        super().__init__(**kwargs)
+
+    def prepare_value(self, value: Any) -> Any:
+        return ", ".join(value) if isinstance(value, list) else value
+
+    def to_python(self, value: Any) -> list[str]:
+        text = super().to_python(value) or ""
+        return [item.strip() for item in text.split(",") if item.strip()]
+
+
 class UtcDateTimeField(forms.DateTimeField):
     """A datetime-local input interpreted as UTC. All event times are shown in UTC."""
 
@@ -51,6 +66,15 @@ class EventSettingsForm(forms.Form):
     qv_credits = forms.IntegerField(min_value=1, max_value=100, label="Quadratic voting credits")
     voting_opens_at = UtcDateTimeField(label="Voting opens (UTC)")
     voting_closes_at = UtcDateTimeField(label="Voting closes (UTC)")
+    vote_burst_limit = forms.IntegerField(
+        min_value=2, max_value=10000, label="Votes per minute from one network before holding"
+    )
+    vote_trusted_networks = CommaListField(
+        label="Trusted venue networks (CIDR, comma-separated; never held as a burst)"
+    )
+    vote_email_domains = CommaListField(
+        label="Email voting only for these domains (comma-separated; empty for any)"
+    )
 
 
 class CriterionForm(forms.Form):

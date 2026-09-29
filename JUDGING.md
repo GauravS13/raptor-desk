@@ -209,6 +209,20 @@ again as reviews arrive, and whatever is still close goes to deliberation.
      - every written comment and "one thing to improve", unattributed and in a fixed shuffled order
    - A team can query a factual error. Organizers answer, and both steps are audited. The signed result itself never changes.
 
+### 6c. Pairwise mode (Bradley–Terry)
+
+Some judges find a 1 to 5 scale hard to hold steady across twenty projects, but
+can say reliably which of two projects is stronger. Pairwise mode asks exactly
+that.
+
+- **Who compares what.** A judge compares two projects they were assigned, so they have seen both, and conflicts are already excluded. Each judge answers each pair once: "A is stronger", "B is stronger" or "too close to call", with the arrow keys.
+- **Which pair comes next.** The most informative pair left. Pairs involving a close call on the prize places come first, then the pair whose outcome the current model predicts least well.
+- **The model.** Bradley–Terry, P(i beats j) = s_i / (s_i + s_j), fitted with Hunter's MM algorithm, which raises the likelihood at every step. A tie counts as half a win for each side. A weak prior (one virtual win and one virtual loss against an average project) keeps every strength finite, even for a project that never lost, and pulls thinly compared projects towards the middle.
+- **Uncertainty.** A seeded bootstrap over the comparisons gives a 90% interval on each log-strength, and each project's chance of finishing inside every cutoff, the same as for the scores.
+- **Where it shows.** A separate table on the organizer's results page, with the Spearman agreement with the score-based ranking on the same projects. It never replaces the scores: where the two disagree, the organizer sees it in deliberation.
+- **Integrity.** Comparisons are append-only and go into the event's signed score ledger. Only the judge and the organizers can see them. The API is `/api/events/{id}/pairwise/next`, `/pairwise` and `/pairwise/standings`.
+- **Tests** (`tests/scoring/test_pairwise.py`): the estimator recovers a known order from simulated comparisons (Spearman above 0.85 for 20 projects and 600 comparisons), matches the closed-form odds for two projects, keeps unbeaten and uncompared projects finite, and is reproducible whatever order the comparisons arrive in.
+
 ### Tamper evidence and signed records
 
 - **Score ledger.** Every submitted, amended or imported review appends a ledger entry:

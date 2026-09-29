@@ -35,14 +35,14 @@
       <td>{{ row.computed_rank }}</td>
       <td>{{ row.name }} <small class="muted">{{ row.project_id }} · {{ row.team }}</small>
         {% if row.flags or row.decided or row.notes %}<br>{% endif %}
-        {% for f in row.flags %}<span class="tag">{{ f|flag_label }}</span>{% endfor %}
-        {% if row.decided %}<span class="tag">decided</span>{% endif %}
+        {% for f in row.flags %}<span class="tag {{ f|flag_class }}">{{ f|flag_label }}</span>{% endfor %}
+        {% if row.decided %}<span class="tag ok">decided</span>{% endif %}
         {% for note in row.notes %}<br><small>{{ note }}</small>{% endfor %}
       </td>
       <td>{{ row.score|floatformat:3 }}</td>
       <td>{{ row.ci_low|floatformat:2 }}–{{ row.ci_high|floatformat:2 }}</td>
       {% if has_bonus %}<td>{{ row.bonus|floatformat:1 }}</td>{% endif %}
-      {% for c in cutoffs %}<td>{{ row.p_top|get_item:c|percent }}</td>{% endfor %}
+      {% for c in cutoffs %}<td>{% chance row.p_top|get_item:c %}</td>{% endfor %}
     </tr>
   {% endfor %}
   </tbody>
@@ -96,7 +96,7 @@
       <tbody>
       {% for snap in snapshots %}
         <tr>
-          <td>#{{ snap.number }}{% if forloop.first %} {% if latest_is_current %}<span class="tag">current</span>{% else %}<span class="tag">out of date: reviews or decisions changed since</span>{% endif %}{% endif %}</td>
+          <td>#{{ snap.number }}{% if forloop.first %} {% if latest_is_current %}<span class="tag ok">current</span>{% else %}<span class="tag bad">out of date: reviews or decisions changed since</span>{% endif %}{% endif %}</td>
           <td>{{ snap.created_at|date:"Y-m-d H:i" }} UTC</td>
           <td><code>{{ snap.payload_hash|slice:":16" }}…</code></td>
           <td>{{ snap.payload.decisions|length }}</td>

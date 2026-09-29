@@ -16,12 +16,16 @@ Payloads never carry scores, tallies or email addresses.
 
 import hashlib
 import hmac
+import ipaddress
 import json
 import secrets
+import socket
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Any
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 
@@ -45,6 +49,38 @@ SIGNATURE_HEADER = "X-Dogfood-Signature"
 TIMEOUT_SECONDS = 5
 
 
+def blocked_reason(url: str) -> str:
+    """Why this URL may not receive webhooks, or "" if it may.
+
+    Unless RD_WEBHOOK_ALLOW_PRIVATE is on, every address the host name
+    resolves to must be public: no private, loopback, link-local, reserved or
+    multicast range. Checked at registration and again before each delivery,
+    so a name that later resolves inward is still refused.
+    """
+    if settings.WEBHOOK_ALLOW_PRIVATE:
+        return ""
+    parsed = urllib.parse.urlsplit(url)
+    host = parsed.hostname or ""
+    if not host:
+        return "the URL has no host"
+    try:
+        infos = socket.getaddrinfo(host, parsed.port or (443 if parsed.scheme == "https" else 80))
+    except OSError:
+        return f"{host} does not resolve"
+    for info in infos:
+        address = ipaddress.ip_address(info[4][0].split("%")[0])
+        if (
+            address.is_private
+            or address.is_loopback
+            or address.is_link_local
+            or address.is_reserved
+            or address.is_multicast
+            or address.is_unspecified
+        ):
+            return f"{host} resolves to a private or internal address ({address})"
+    return ""
+
+
 def sign(secret: str, body: bytes) -> str:
     return "sha256=" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
 
@@ -63,6 +99,9 @@ def create(
 ) -> tuple[Webhook, str]:
     if not url.startswith(("https://", "http://")):
         raise unprocessable("The URL must start with https:// or http://.")
+    blocked = blocked_reason(url)
+    if blocked:
+        raise unprocessable(f"Webhooks cannot target this address: {blocked}.")
     wanted = sorted(set(events))
     unknown = [e for e in wanted if e not in EVENTS]
     if not wanted or unknown:
@@ -165,6 +204,12 @@ def deliver(payload: dict[str, Any]) -> None:
     hook = Webhook.objects.filter(pk=payload["webhook"], active=True).first()
     if hook is None:
         return  # removed or paused since the event: nothing to deliver
+    blocked = blocked_reason(hook.url)
+    if blocked:
+        Webhook.objects.filter(pk=hook.pk).update(
+            last_status="blocked", last_delivery_at=clock.now()
+        )
+        raise RuntimeError(f"webhook target refused: {blocked}")
     body = json.dumps(payload["body"], separators=(",", ":"), sort_keys=True).encode()
     request = urllib.request.Request(  # noqa: S310 (organizer-configured http(s) URL)
         hook.url,

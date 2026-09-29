@@ -12,7 +12,7 @@
   <article>
     <header>
       <strong>{{ q.project.canonical_version.name|default:q.project_id }}</strong> <small class="muted">{{ q.project_id }}</small>
-      <span class="tag">{{ q.get_status_display }}</span>
+      <span class="tag {% if q.status == 'open' %}warn{% else %}ok{% endif %}">{{ q.get_status_display }}</span>
       <small class="muted">{{ q.created_at|date:"Y-m-d H:i" }} UTC · {{ q.author.email }}</small>
     </header>
     <p>{{ q.message|linebreaksbr }}</p>

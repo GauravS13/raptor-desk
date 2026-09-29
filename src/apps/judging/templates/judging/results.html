@@ -39,7 +39,7 @@
         <tr>
           <td>{{ project_names|get_item:call.project.id }} <small class="muted">{{ call.project.id }}</small></td>
           <td>top {{ call.cutoff }}</td>
-          <td>{{ call.p|percent }}</td>
+          <td>{% chance call.p %}</td>
           <td>{{ doubt.statuses|get_item:call.project.id }}</td>
         </tr>
       {% endfor %}
@@ -109,8 +109,8 @@
       <td><strong>{{ row.score|floatformat:2 }}</strong></td>
       <td>{% if row.movement > 0 %}<span class="up">▲{{ row.movement }}</span>{% elif row.movement < 0 %}<span class="down">▼{{ row.movement|stringformat:"d"|cut:"-" }}</span>{% else %}–{% endif %}</td>
       <td>{{ row.ci_low|floatformat:2 }}–{{ row.ci_high|floatformat:2 }}</td>
-      {% for c in cutoffs %}<td>{{ row.p_top|get_item:c|percent }}</td>{% endfor %}
-      <td>{% for f in row.flags %}<span class="tag">{{ f|flag_label }}</span>{% endfor %}</td>
+      {% for c in cutoffs %}<td>{% chance row.p_top|get_item:c %}</td>{% endfor %}
+      <td>{% for f in row.flags %}<span class="tag {{ f|flag_class }}">{{ f|flag_label }}</span>{% endfor %}</td>
     </tr>
   {% endfor %}
   </tbody>
@@ -151,7 +151,7 @@
       <tr>
         <td>{{ j.judge }}</td><td>{{ j.n }}</td><td>{{ j.severity|floatformat:2 }}</td>
         <td>{{ j.spread|floatformat:2 }}</td><td>{{ j.misfit|floatformat:2 }}</td>
-        <td>{% if j.flat %}<span class="tag">identical scores everywhere: excluded</span>{% endif %}{% if j.low_n %}<span class="tag">fewer than 3 reviews</span>{% endif %}</td>
+        <td>{% if j.flat %}<span class="tag bad">identical scores everywhere: excluded</span>{% endif %}{% if j.low_n %}<span class="tag warn">fewer than 3 reviews</span>{% endif %}</td>
       </tr>
     {% endfor %}
     </tbody>

@@ -191,3 +191,20 @@ added when the decision is made, next to the commit that implements it.
 - **Why:** a receiver must be able to prove a delivery is ours, and a slow receiver must never slow down a voter or a judge.
 - **Where:** `src/apps/integrations/webhooks.py`
 
+## D-033 · Pairwise mode beside the scores, never instead of them
+- **Decided:** judges compare pairs of their own projects. A Bradley-Terry model (MM fit, weak prior, bootstrap) ranks them in a separate table, and pairs that decide close calls come first.
+- **Rejected:** replacing rubric scores with comparisons; comparing projects a judge has not seen.
+- **Why:** comparisons are easier to answer consistently, but DOGFOOD's rubric carries weights and gates that pairs cannot express. Showing both lets disagreement surface in deliberation.
+- **Where:** `src/scoring_engine/pairwise.py`, `src/apps/judging/pairwise.py`
+
+## D-034 · Close the threats that can be closed
+- **Decided:** webhook targets on private or internal addresses are refused outside the demo profile, checked at registration and before each delivery. Each event can set a burst threshold, trusted venue networks and allowed email domains for voting. Judges can recuse themselves in one click.
+- **Why:** the threat model's ranked weaknesses included items fixable in the product, so they were fixed. The remaining ones (a dishonest organizer, whoever controls the key, collusion, denial of service) stay documented, because no portal can remove them.
+- **Where:** `src/apps/integrations/webhooks.py`, `src/apps/voting/services.py`, `src/apps/judging/services.py`
+
+## D-035 · A dark evaluation console as the visual language
+- **Decided:** one theme from a written design brief: tonal dark surfaces, an amber-copper primary, and colour reserved for meaning (amber for doubt, emerald for verified, rose for traps, indigo for anything signed). Chances are drawn as meters. Numbers, ids and hashes are set in a monospace face with tabular figures. The home page opens on a real published ranking.
+- **Rejected:** the default light framework look; a marketing hero with stock claims.
+- **Why:** judges read tables of numbers for hours. The design makes doubt and verification visible at a glance, and the fonts are vendored, so it still works offline.
+- **Where:** `src/static/css/theme.css`, `src/templates/home.html`
+

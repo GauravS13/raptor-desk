@@ -26,7 +26,7 @@
     <p><a href="/projects/{{ p.id }}">Read about this project</a></p>
     {% if open %}
       {% if p.id in state.voted_for %}
-        <p class="tag">voted</p>
+        <p class="tag ok">voted</p>
       {% elif quadratic and state.remaining %}
         <form method="post" action="{{ action }}" class="inline-form">
           {% csrf_token %}

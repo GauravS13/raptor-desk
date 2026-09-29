@@ -29,3 +29,17 @@ def flag_label(flag: str) -> str:
         cutoff = flag.removeprefix("method_disagreement_top")
         return f"methods disagree on the top {cutoff}: decide with care"
     return flag.replace("_", " ")
+
+
+@register.filter
+def flag_class(flag: str) -> str:
+    """Chip colour for an engine flag: doubt is amber."""
+    if flag.startswith(("close_call", "method_disagreement")) or flag == "weak_evidence":
+        return "warn"
+    return ""
+
+
+@register.inclusion_tag("judging/_chance.html")
+def chance(value: float | None) -> dict[str, Any]:
+    """A probability as a meter: green when settled, amber when in doubt, slate when unlikely."""
+    return {"value": value}

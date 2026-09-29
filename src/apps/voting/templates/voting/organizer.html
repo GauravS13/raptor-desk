@@ -8,12 +8,12 @@
 <p>
   <span class="tag">voting: {{ event.get_voting_mode_display }}</span>
   <span class="tag">{{ event.get_voting_scheme_display }}</span>
-  <span class="tag">{% if event.voting_is_open %}open{% else %}not open{% endif %}</span>
+  <span class="tag {% if event.voting_is_open %}ok{% endif %}">{% if event.voting_is_open %}open{% else %}not open{% endif %}</span>
   {% if event.voting_opens_at %}<span class="muted">{{ event.voting_opens_at|date:"Y-m-d H:i" }} to {{ event.voting_closes_at|date:"Y-m-d H:i"|default:"(no end)" }} UTC</span>{% endif %}
   · <a href="/o/events/{{ event.id }}/settings">change in Settings</a>
 </p>
 <p><span class="tag">ballots: {{ summary.ballots }}</span> <span class="tag">votes: {{ summary.votes }}</span>
-  <span class="tag">held for review: {{ summary.held }}</span></p>
+  <span class="tag {% if summary.held %}warn{% endif %}">held for review: {{ summary.held }}</span></p>
 
 {% if minted %}
 <article>

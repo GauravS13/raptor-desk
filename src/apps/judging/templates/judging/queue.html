@@ -18,7 +18,7 @@
       <li>
         <a href="/judge/review/{{ item.id }}">{{ item.project.canonical_version.name }}</a>
         {% if item.project.track %}<span class="muted"> · {{ item.project.track.name }}</span>{% endif %}
-        {% if item.status == "done" %}<span class="tag">done</span>{% endif %}
+        {% if item.status == "done" %}<span class="tag ok">done</span>{% endif %}
       </li>
     {% endfor %}
   </ol>

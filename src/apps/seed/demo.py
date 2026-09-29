@@ -260,6 +260,7 @@ def ensure_archive_event(source: Event) -> Event:
             bundles.export(source),
             "Sample Hack 2025 (archive)",
             event_id=ARCHIVE_EVENT_ID,
+            keep_phase=True,
         )
         event_services.transition(actor, event, Phase.DELIBERATION, reason="Judging closed")
         for row in deliberation.board(event).undecided:

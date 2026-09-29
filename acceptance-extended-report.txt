@@ -1,6 +1,6 @@
 DOGFOOD 2026 extended acceptance report (team-written, not the official checker)
 portal: http://localhost:8080
-run: d0fcc7
+run: 8d05a1
 claimed: T3 T4
 
 T3  results hidden from visitors during voting ...... PASS

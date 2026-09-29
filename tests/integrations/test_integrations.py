@@ -149,6 +149,8 @@ def test_import_round_trip_keeps_every_count_title_and_score(seeded, client) -> 
     again = client.get(f"/api/events/{new_id}/export", **bearer("organizer")).json()
     assert _summary(again) == _summary(bundle)
     assert Event.objects.get(pk=new_id).ledger.count() == 126
+    assert Event.objects.get(pk=new_id).phase == "draft"  # nothing public until published
+    assert new_id not in client.get("/").content.decode()
 
 
 def test_a_changed_bundle_is_refused(seeded, client) -> None:

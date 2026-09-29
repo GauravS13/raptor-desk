@@ -5,6 +5,10 @@ base_url = "http://localhost:8080"
 claimed = ["T1", "T2", "T3", "T4"]
 pitch = "The judging desk Raptors can run on Monday: DOGFOOD preloaded, every judge's work signed, every ranking shows its math and fixes its own doubt."
 
+[bonuses]
+claimed = ["Normalization Proof", "Pairwise Mode", "Threat Model", "API First"]
+evidence = ["JUDGING.md", "JUDGING.md section 6c", "THREAT-MODEL.md", "/api/docs"]
+
 [auth]
 organizer   = "Authorization: Bearer rd_seed_org_7f2a"
 judge_a     = "Authorization: Bearer rd_seed_jdg26_91bc"

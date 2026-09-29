@@ -187,6 +187,10 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
 
+# Webhooks may not target private, loopback or link-local addresses (SSRF), except
+# in the demo profile, where the acceptance checker listens on the host machine.
+WEBHOOK_ALLOW_PRIVATE = env_bool("RD_WEBHOOK_ALLOW_PRIVATE", PROFILE == "demo")
+
 # Outgoing email goes to the local Mailpit inbox in Docker (http://localhost:8025).
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = env("RD_EMAIL_HOST", "localhost")

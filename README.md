@@ -1,8 +1,34 @@
-# Raptor Desk
+<p align="center">
+  <img src="docs/img/banner.svg" alt="Raptor Desk: the hackathon judging desk for DOGFOOD 2026" width="100%">
+</p>
 
-**The hackathon judging desk an organizer can run on Monday: their own event comes preloaded, every judge's work is accounted for, and every ranking shows its math and flags its own doubt.**
+<p align="center">
+  <a href="https://github.com/GauravS13/raptor-desk/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/GauravS13/raptor-desk/actions/workflows/ci.yml/badge.svg"></a>
+  <img alt="Official checker 7/7" src="https://img.shields.io/badge/official%20checker-7%2F7%20PASS-2ea44f">
+  <img alt="Extended checker 32/32" src="https://img.shields.io/badge/extended%20checker-32%2F32%20PASS-2ea44f">
+  <img alt="Tiers T1 to T4" src="https://img.shields.io/badge/tiers-T1%20%C2%B7%20T2%20%C2%B7%20T3%20%C2%B7%20T4-0172ad">
+  <img alt="Bonus challenges 4 of 4" src="https://img.shields.io/badge/bonus%20challenges-4%2F4-7c3aed">
+  <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-lightgrey">
+</p>
 
-Built for DOGFOOD 2026 by Hackathon Raptors; not an official Raptors product. MIT licensed.
+<p align="center">
+  <b>Submissions, fair judging and a public vote, in one self-hosted portal.</b><br>
+  Every ranking shows its math and names its own doubt. Every score is signed.
+</p>
+
+<p align="center">
+  <a href="#run-it">Run it</a> ·
+  <a href="EVALUATE.md">Evaluate in 5 minutes</a> ·
+  <a href="#tiers">Tiers</a> ·
+  <a href="#against-the-dogfood-scoring-criteria">Scoring criteria</a> ·
+  <a href="#bonus-challenges">Bonus challenges</a> ·
+  <a href="#screenshots">Screenshots</a> ·
+  <a href="#documentation">Docs</a>
+</p>
+
+<p align="center">
+  <img src="docs/img/screens/results-close-calls.png" alt="Organizer results: bias-corrected ranking with the close calls the desk proposes to settle" width="92%">
+</p>
 
 ---
 
@@ -12,14 +38,26 @@ Built for DOGFOOD 2026 by Hackathon Raptors; not an official Raptors product. MI
 docker compose up
 ```
 
-That's it: no `.env`, no cloud account, no external service. After the first build, it runs with the network off.
+That's the whole setup: no `.env`, no cloud account, no external service, and it runs with the network off after the first build. It boots seeded with the official DOGFOOD fixtures, plus three demo events.
 
-| | |
+| Open | For |
 |---|---|
-| Portal | http://localhost:8080 |
-| Local mail inbox (invites, sign-in links) | http://localhost:8025 |
+| **http://localhost:8080/tour** | A five-minute tour: every scoring criterion, linked to the page that shows it |
+| http://localhost:8080 | The portal |
+| http://localhost:8025 | The local mail inbox (invitations, voting links, sign-in links) |
 
-On boot the portal migrates, imports the official DOGFOOD fixtures, and prints the acceptance checker's headers, the demo sign-ins and a **data hygiene report**:
+**Demo accounts.** The sign-in page has a one-click button for each; the password is `raptor-demo-2026`.
+
+| Role | Email | Try this |
+|---|---|---|
+| Organizer | `organizer@raptor-desk.local` | Sample Hack 2026 → **Results**, **Deliberation**, **Voting** |
+| Judge A | `jonas.vogel@example.org` | **Judge** → score with the keyboard, then **Compare pairs** |
+| Judge B | `diego.herrera@example.org` | Try to read Judge A's scores through the API (refused) |
+| Participant | `priya1@example.org` | Form a team in DOGFOOD 2026, submit, edit, resubmit |
+| Admin | `admin@raptor-desk.local` | `/metrics`, and every event |
+
+<details>
+<summary><b>What the portal prints when it boots</b>: the checker's headers and a data hygiene report on the fixtures</summary>
 
 ```
 seeded. test logins:
@@ -27,36 +65,24 @@ seeded. test logins:
   judge_a      Authorization: Bearer rd_seed_jdg26_91bc
   judge_b      Authorization: Bearer rd_seed_jdg24_44de
   participant  Authorization: Bearer rd_seed_prt_priya1_2e88
-
-demo sign-in (password raptor-demo-2026):
-  admin        admin@raptor-desk.local
-  organizer    organizer@raptor-desk.local  (organizer of every demo event)
-  judge_a      jonas.vogel@example.org  (fixture judge jdg_26)
-  judge_b      diego.herrera@example.org  (fixture judge jdg_24)
-  participant  priya1@example.org  (member of team tm_01)
+  participant_b Authorization: Bearer rd_seed_prt_lena2_61d0  (extended checker)
 
 data hygiene report for Sample Hack 2026 (evt_01):
-  [resubmission] 'Dry Harbour' was submitted 2 times (prj_07, prj_41); kept as one project with versions ...
-  [flat_liner] Judge jdg_07 gave identical scores to all 3 projects they reviewed ...
+  [resubmission] 'Dry Harbour' was submitted 2 times (prj_07, prj_41); kept as one project with versions.
+  [flat_liner] Judge jdg_07 gave identical scores to all 3 projects they reviewed.
   [single_review_judges] Judges with a single review cannot be calibrated: jdg_01, jdg_23.
-  [under_reviewed] 8 project(s) have fewer than 3 reviews ...
-  [weak_evidence] Projects with fewer than 2 informative reviews ...: prj_19 (1)
-  [missing_feedback] 49 of 123 reviews have no written comment ...
-  [thin_tracks] ...: Developer tools (3), Open hardware (3)
+  [under_reviewed] 8 project(s) have fewer than 3 reviews.
+  [weak_evidence] Projects with fewer than 2 informative reviews: prj_19 (1)
+  [missing_feedback] 49 of 123 reviews have no written comment.
+  [thin_tracks] Developer tools (3), Open hardware (3)
 ```
 
-The fixed tokens and demo passwords exist only in the default `demo` profile. `RD_PROFILE=production` creates none of them.
-
-**Judging this project?**
-- Open http://localhost:8080/tour: every scoring criterion, linked to the pages that show it.
-- Or read [EVALUATE.md](EVALUATE.md).
-- The sign-in page lists the demo accounts, with one button each.
+The fixed tokens and demo passwords exist only in the default `demo` profile. `RD_PROFILE=production` creates none of them, and `manage.py doctor` fails if any are present.
+</details>
 
 ---
 
-## Acceptance
-
-All seven official checks pass, and all 32 extended checks for T3 and T4 pass. They were run with the unmodified `tools/run.py`, and also under Python 3.9, where the checker uses its fallback TOML parser. The table below is generated from the reports by `tools/truth_table.py`, and CI fails if it drifts.
+## Tiers
 
 <!-- truth-table:begin (generated by tools/truth_table.py; do not edit by hand) -->
 
@@ -123,106 +149,149 @@ All seven official checks pass, and all 32 extended checks for T3 and T4 pass. T
 
 <!-- truth-table:end -->
 
-**What each tier covers:**
-- **T1 Core:**
-  - accounts, with roles scoped per event
-  - events with dates, tracks and prizes
-  - teams formed through invite links
-  - drafts, editable until the deadline, with each resubmission kept as a version
-  - the deadline enforced in the API (409 with the close time)
-  - a public gallery with search and filters
-- **T2 Judging:**
-  - judge invitations, batch and planned assignment
-  - a weighted rubric: percentages or multipliers, gates, and bonuses that only break ties
-  - isolation enforced in the backend ([ACCESS-MATRIX.md](ACCESS-MATRIX.md))
-  - a progress dashboard
-  - documented normalization with a proof ([JUDGING.md](JUDGING.md))
-  - CSV at every stage
-- **T3 Public:**
-  - community voting three ways: ballot links an organizer mints, one-off links emailed to a verified address, or a signed-in account
-  - single or quadratic ballots
-  - comments, for signed-in people only, always escaped, and hideable by organizers
-  - results hidden from everyone but organizers until the voting window closes
-  - each voter's ballot in its own stable random order, while the gallery keeps its official order
-  - answers to cheating:
-    - no voting for your own team
-    - one vote per ballot
-    - one emailed link per person (case and "+tag" folded)
-    - failed attempts rate-limited per network
-    - bursts from one network held for an organizer to review
-    - every accepted, refused and forged attempt in the audit trail, by ballot id, never by email
-- **T4 Stretch:**
-  - a REST API with OpenAPI covering every console action (a test enforces parity)
-  - webhooks signed with HMAC-SHA256 (`X-Dogfood-Signature`) and retried by the outbox
-  - judge protocols, judging certificates and participation records: signed, and verifiable at `/verify` or offline with `tools/verify.py`
-  - an embeddable gallery (the only frameable page)
-  - bulk export and import of whole events as a JSON bundle, with a manifest hash checked on import
+<details>
+<summary><b>What each tier contains</b></summary>
+
+| Tier | Official requirement | Where it lives |
+|---|---|---|
+| **T1 Core** | Login, roles, create an event, form a team, submit, edit until the deadline, the deadline stops submissions, public gallery | Email and password or email-link sign-in; roles granted per event; invite-link teams; a resubmission becomes version 2 of the same project; the deadline is enforced in the API (409 with the close time); gallery with search and filters |
+| **T2 Judging** | Invite and assign judges, a weighted rubric, judges cannot see each other's work, organizer progress view, a documented way to even out harsh and generous judges, CSV export | Invitations by email; planned assignment by track, load and conflict; percent or multiplier weights, gates and tie-break bonuses; isolation in the backend ([ACCESS-MATRIX.md](ACCESS-MATRIX.md)); progress dashboard; additive judge-bias model ([JUDGING.md](JUDGING.md)); CSV for results, reviews, assignments, teams, submissions, registrations and audit |
+| **T3 Public** | Community voting, comments, results hidden until the window closes, ballots in random order, an answer to people trying to cheat | Vote by minted link, emailed link or account; comments; tallies for organizers only until close; each voter's own stable shuffle; own-team block, one vote per ballot, one link per person, rate limits, burst quarantine, full audit |
+| **T4 Stretch** | REST API, webhooks, certificates, verifiable judge records, an embeddable gallery, bulk import and export | OpenAPI at `/api/docs` covering every console action; HMAC-signed webhooks; signed certificates, participation records and judge protocols, verifiable at `/verify` and offline; embeddable gallery; whole-event export and import with a checked manifest |
+</details>
 
 ---
 
-## What makes it different
+## Against the DOGFOOD scoring criteria
 
-- **DOGFOOD itself comes preloaded.** A live event is configured from the `dogfood-2026` template: the T1 gate, 40/25/20/15 weights on a 0–5 scale, and bonuses that only break ties. There are also templates for Zero Dependency, MINDCODE and Code Resurrection (multiplier weights).
-- **It decides where judges' time goes.**
-  - The desk finds the projects whose prize place the data does not settle.
-  - It proposes the few extra reviews that would settle them: which judge, which project, and why.
-  - One click asks those judges.
-  - This is the Measure, Doubt, Ask loop ([JUDGING.md §6](JUDGING.md)).
-- **People decide the prizes, on the record.**
-  - A deliberation board shows what is still in doubt. Each decision needs a written reason.
-  - The final order is frozen into a snapshot signed with the deployment's key.
-  - Publishing is blocked until every close call on the prize places is settled or decided.
-  - The public results carry a method card.
-  - Every team gets a feedback report with all the written feedback, unattributed, and can query a factual error.
-- **Judging you can defend.** An additive judge-bias model, a shrunken z-score and the raw mean, side by side, plus bootstrap intervals, P(top k) per prize cutoff, and flags for close calls, weak evidence and method disagreement. On the fixtures, the raw average's tie for first is resolved, and a project that ranked third only because it drew a lenient judge drops to seventh. A simulation with a known truth shows the correction beats averaging in 96% of runs.
-- **A community vote that is hard to game.**
-  - Voters can use links, emailed links or accounts. Each ballot is shuffled for its own voter, and nobody can vote for their own team.
-  - Tallies stay hidden until the vote closes. Suspicious bursts are held for a human, and the voter isn't told.
-  - Every attempt is audited by ballot id, never by email.
-- **Every score is on a signed ledger.**
-  - Scores are hash-chained and signed, and checked against the live database.
-  - A score edited directly in the database is caught and located.
-  - Judges get signed protocols, certificates and an opt-in public passport. Team members get participation records.
-  - Everything can be checked at `/verify`, or offline with a standard-library `tools/verify.py`.
-- **Isolation is proven, not promised.** Default-deny policies on every route; the portal refuses to boot if one is missing. The API accepts bearer tokens only and never redirects. The access matrix is generated from real responses.
-- **The traps are named.** The flat-lining judge, single-review judges, the resubmission (one project, two versions), missing feedback and shared team names are all detected at boot and handled in the data model.
-- **An honest, append-only audit trail.** Database triggers reject edits to the audit log, the phase history and submitted versions.
+### Tier completion and correctness (40%)
+- **Both reports are committed and regenerated in CI on every push:** [`acceptance-report.txt`](acceptance-report.txt) (official) and [`acceptance-extended-report.txt`](acceptance-extended-report.txt) (ours, for T3 and T4).
+- **Every trap in the fixtures is handled:** the duplicate submission, the flat-lining judge, unfinished review batches, missing feedback, and team names shared by different teams. Each is named in the boot log.
+
+### Judging integrity (25%)
+
+```mermaid
+flowchart LR
+    A["Measure<br/>weighted rubric +<br/>additive judge-bias model"] --> B["Doubt<br/>bootstrap: chance of each<br/>prize place, close calls"]
+    B --> C["Ask<br/>the few extra reviews or<br/>pairwise comparisons that settle them"]
+    C --> A
+    B --> D["Decide<br/>deliberation with<br/>written reasons"]
+    D --> E["Sign<br/>frozen, signed snapshot;<br/>public method card"]
+```
+
+- **Normalization you can defend.**
+  - An additive judge-bias model, shown beside the shrunken z-score and the raw mean.
+  - On the fixtures, it resolves the raw average's tie for first. A project that ranked 3rd only because it drew a generous judge drops to 7th.
+  - A simulation with a known truth shows it beats plain averaging in 96% of runs ([JUDGING.md](JUDGING.md)).
+- **Doubt becomes action.** The desk finds the prize places the data does not settle, and proposes which judge should review which project, and why. People decide the rest in deliberation, on the record.
+- **Isolation proven, not promised.** Default-deny policies on every route, and the portal refuses to boot if one is missing. The [access matrix](ACCESS-MATRIX.md) is generated from real responses.
+- **Tamper-evident.**
+  - Every score is in a hash-chained, signed ledger, checked against the live database. `manage.py demo_tamper` shows a direct database edit being caught.
+  - Results are frozen into signed snapshots.
+  - Judges get signed protocols, certificates and an opt-in public passport.
+- **Assignment that respects people.** Track coverage, load caps and conflicts. Judges can recuse themselves in one click, and a replacement is proposed. Each judge sees their queue in a random order.
+
+### Adoptability and operability (20%)
+- **DOGFOOD itself is preloaded.** The live demo event is configured from the `dogfood-2026` template: the T1 gate, 40/25/20/15 weights, and bonuses that only break ties. Templates for three other Raptors events are included.
+- **Built to run for real:**
+  - `manage.py doctor` (health report)
+  - online backup and verified restore
+  - JSON logs that never contain URL tokens
+  - admin-only Prometheus metrics
+  - a production profile with no demo data
+- **Data in and out:** CSV exports at every stage, whole-event bundles for archive and migration, and signed webhooks for everything else.
+
+### Code quality and innovation (15%)
+- **Checks on every commit:** an architecture contract (the scoring engine cannot import the web framework), a test that every UI action exists in the API, and 357 tests.
+- **Every design choice written down,** with the alternatives rejected: [docs/DECISION-LOG.md](docs/DECISION-LOG.md).
+- **Innovation:** the Measure → Doubt → Ask loop, pairwise mode feeding the close calls, and records anyone can verify offline with `tools/verify.py`.
+
+---
+
+## Bonus challenges
+
+| Bonus | Status | Evidence |
+|---|---|---|
+| **Normalization Proof** (hard) | ✅ Done | [JUDGING.md](JUDGING.md): method, fixture results, a 200-run simulation against a known truth, sensitivity analysis. The tables are generated and checked in CI |
+| **Pairwise Mode** (hard) | ✅ Done | Judges answer "A or B?" with the arrow keys; a Bradley–Terry estimator (MM algorithm, bootstrap intervals) ranks them beside the scores; the pairs that decide close calls come first. [JUDGING.md §6c](JUDGING.md) |
+| **Threat Model** (medium) | ✅ Done | [THREAT-MODEL.md](THREAT-MODEL.md): Sybil votes, ballot stuffing, collusion, tampering and more, with a ranked list of what is **not** stopped |
+| **API First** (medium) | ✅ Done | Every console action is in the REST API (a test enforces it). OpenAPI at `/api/docs` and `/api/openapi.json` |
+
+---
+
+## Screenshots
+
+| | |
+|---|---|
+| <img src="docs/img/screens/judge-review.png" alt="Judge review console"><br>**Judge console:** keyboard scoring, autosave, one-click recusal | <img src="docs/img/screens/pairwise.png" alt="Pairwise mode"><br>**Pairwise mode:** A or B, with the arrow keys |
+| <img src="docs/img/screens/deliberation.png" alt="Deliberation board"><br>**Deliberation:** decisions with written reasons, a line under the prize places | <img src="docs/img/screens/public-results.png" alt="Public results with method card"><br>**Published results:** the method card with the hash and signing key |
+| <img src="docs/img/screens/ballot.png" alt="Community vote ballot"><br>**Community vote:** each voter's own order, no own-team votes | <img src="docs/img/screens/verify.png" alt="Certificate verification"><br>**Verify:** anyone can check a certificate or record |
+| <img src="docs/img/screens/home.png" alt="Home page with a published ranking"><br>**Home:** a real published ranking, with its chances and signature | <img src="docs/img/screens/tour.png" alt="Five-minute tour"><br>**Tour:** each scoring criterion, one click away |
+
+---
+
+## How it is built
+
+```mermaid
+flowchart TB
+    subgraph compose["docker compose up"]
+        app["app: Django + django-ninja<br/>pages (HTMX) and REST API"]
+        worker["worker: outbox<br/>email, webhooks"]
+        mail["Mailpit<br/>local inbox"]
+        db[("SQLite (WAL)<br/>on the data volume")]
+    end
+    app --> db
+    worker --> db
+    worker --> mail
+```
+
+<details>
+<summary><b>Details</b></summary>
+
+- **Stack:** Django 5.2 LTS, django-ninja for the API, HTMX for the pages, SQLite in WAL mode.
+- **Scoring engine:** a pure Python package with no web framework in it, enforced by an architecture contract.
+- **Append-only tables:** the audit log, phase history, submitted versions, decisions, snapshots, the score ledger, signed documents and pairwise comparisons. Database triggers enforce it, and `manage.py doctor` checks the triggers.
+- **Walkthroughs:** [ARCHITECTURE.md](ARCHITECTURE.md) and [DATA-MODEL.md](DATA-MODEL.md).
+</details>
 
 ---
 
 ## Documentation
 
-| | |
+| Document | What it answers |
 |---|---|
-| [EVALUATE.md](EVALUATE.md) | Five-minute evaluation path, one section per scoring criterion |
-| [OPERATIONS.md](OPERATIONS.md) | Backups and restore, health report, logs, metrics, configuration, going to production |
+| [EVALUATE.md](EVALUATE.md) | How to check every scoring criterion in five minutes, including both checkers |
+| [JUDGING.md](JUDGING.md) | Assignment, scoring, normalization with proof, uncertainty, the close-call loop, pairwise mode, deliberation and publishing |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | How the system fits together, and why |
-| [DATA-MODEL.md](DATA-MODEL.md) | Schema, invariants, the fixture transform, getting data in and out |
-| [JUDGING.md](JUDGING.md) | Assignment, scoring maths, normalization, uncertainty, proof |
-| [ACCESS-MATRIX.md](ACCESS-MATRIX.md) | Who can read what, from real HTTP responses |
-| [THREAT-MODEL.md](THREAT-MODEL.md) | What each part defends against, and what it does not stop |
-| [docs/DECISION-LOG.md](docs/DECISION-LOG.md) | Every design decision, what was rejected, and why |
-| API reference | http://localhost:8080/api/docs (OpenAPI at `/api/openapi.json`) |
+| [DATA-MODEL.md](DATA-MODEL.md) | Every table and its invariants, and how the fixtures are loaded |
+| [ACCESS-MATRIX.md](ACCESS-MATRIX.md) | Who can read what, generated from real responses |
+| [THREAT-MODEL.md](THREAT-MODEL.md) | What each defence stops, and what it does not |
+| [OPERATIONS.md](OPERATIONS.md) | Backups, health report, logs, metrics, configuration, going to production |
+| [docs/DECISION-LOG.md](docs/DECISION-LOG.md) | Every design decision and the alternatives rejected |
 
-## Development
+<details>
+<summary><b>Commands for developers</b></summary>
 
 ```bash
-uv sync                 # Python 3.12, dependencies from uv.lock
-make check              # ruff, formatting, architecture contracts, migrations, tests
-make accept             # run the official and the extended checker against a running portal
-make doctor             # health report of the running portal
-make backup             # consistent backup, safe while running (see OPERATIONS.md)
-uv run python tools/simulate_proof.py   # regenerate every number in JUDGING.md
+uv sync                                                  # Python 3.12, dependencies from uv.lock
+make check                                               # lint, contracts, migrations, tests, generated-doc checks
+python3 tools/run.py .dogfood.toml --fixtures data/fixtures.json   # official checker (T1, T2)
+python3 tools/run_extended.py .dogfood-extended.toml               # extended checker (T3, T4)
+python3 tools/verify.py document.json --portal http://localhost:8080   # check any signed record offline
 ```
+</details>
+
+---
 
 ## Known limitations
 
-- The judge console has no pairwise A/B mode, one-click recusal or autosave yet. Conflicts are declared by organizers, and drafts are saved with a button.
-- Burst detection groups votes by network address. A venue where everyone shares one address looks like a burst, so an organizer reviews held votes rather than the portal discarding them.
-- The official checker contains no T3 or T4 checks. Those tiers are verified by our own extended checker, which judges can re-run.
-- Judges' review time is measured in the browser while the page is visible, so it is an estimate.
-- The leniency model corrects each judge's level, not their scale. JUDGING.md §10 lists the model's assumptions.
+- **T3 and T4 are verified by our extended checker, not the official one,** which contains checks for T1 and T2 only. The truth table above shows both, and anyone can re-run ours.
+- **Burst detection groups votes by network address.** A venue where everyone shares one address looks like a burst, so an organizer reviews held votes instead of the portal discarding them.
+- **The leniency model corrects each judge's level, not their scale.** Judges' review time is measured in the browser, so it is an estimate. See [JUDGING.md §10](JUDGING.md).
+- **Some threats are not stopped:** dishonest organizers, sock-puppet email addresses and judge collusion. See [THREAT-MODEL.md](THREAT-MODEL.md).
 
-## License
+---
 
-MIT. See [LICENSE](LICENSE) and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+<p align="center">
+  Built for <b>DOGFOOD 2026</b> by Hackathon Raptors · MIT licensed · not an official Raptors product
+</p>

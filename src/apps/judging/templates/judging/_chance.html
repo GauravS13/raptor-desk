@@ -1,0 +1,1 @@
+{% load results_tags %}{% if value is not None %}<span class="chance-cell"><meter class="chance" min="0" max="1" low="0.2" high="0.8" optimum="1" value="{{ value }}" aria-hidden="true"></meter>{{ value|percent }}</span>{% endif %}

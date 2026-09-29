@@ -147,6 +147,13 @@ def request_email_link(request: HttpRequest, event: Event, email: str) -> None:
         limit=EMAIL_REQUEST_LIMIT,
         window_seconds=EMAIL_REQUEST_WINDOW_SECONDS,
     )
+    allowed = event.vote_email_domains or []
+    domain = normalize_email(email).rsplit("@", 1)[1]
+    if allowed and domain not in allowed:
+        raise unprocessable(
+            "Voting links are only sent to addresses at: " + ", ".join(allowed),
+            {"code": "domain_not_allowed"},
+        )
     key = email_key(email)
     existing = BallotToken.objects.filter(event=event, email_key=key).first()
     if existing is not None:
@@ -283,6 +290,23 @@ def _ip_hash(request: HttpRequest) -> str:
     return hashlib.sha256(f"{settings.SECRET_KEY}:vote-ip:{ip}".encode()).hexdigest()[:32]
 
 
+def _trusted(event: Event, request: HttpRequest) -> bool:
+    """Votes from the organizer's declared venue network are never held as a burst."""
+    import ipaddress
+
+    try:
+        address = ipaddress.ip_address(ratelimit.client_ip(request))
+    except ValueError:
+        return False
+    for network in event.vote_trusted_networks or []:
+        try:
+            if address in ipaddress.ip_network(network, strict=False):
+                return True
+        except ValueError:
+            continue
+    return False
+
+
 def _refused(request: HttpRequest, token: BallotToken, reason: str, error: ApiError) -> ApiError:
     audit.record(
         "vote.rejected",
@@ -337,7 +361,9 @@ def cast(request: HttpRequest, token: BallotToken, project_id: str, credits: int
             recent = Vote.objects.filter(
                 event=event, ip_hash=ip_hash, created_at__gte=clock.now() - BURST_WINDOW
             ).count()
-            held = recent >= BURST_VOTES
+            held = recent >= (event.vote_burst_limit or BURST_VOTES) and not _trusted(
+                event, request
+            )
             vote = Vote.objects.create(
                 event=event,
                 token=token,

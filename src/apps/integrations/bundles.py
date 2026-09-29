@@ -205,12 +205,21 @@ def _unique_slug(name: str) -> str:
 
 @transaction.atomic
 def import_bundle(
-    actor: Principal, bundle: Any, name: str, *, event_id: str | None = None
+    actor: Principal,
+    bundle: Any,
+    name: str,
+    *,
+    event_id: str | None = None,
+    keep_phase: bool = False,
 ) -> Event:
+    """Create a new event from a bundle. It starts as a draft, so nothing becomes public
+    until an organizer moves it on; ``keep_phase`` keeps the exported phase instead."""
     body = check(bundle)
     name = (name or body["event"]["name"]).strip()[:200]
     source = body["event"]
     fields = {f: source[f] for f in EVENT_FIELDS if f in source}
+    if not keep_phase:
+        fields["phase"] = "draft"
     fields.update({f: _parse(source.get(f)) for f in TIME_FIELDS if f in source})
     fields["name"] = name
     event = Event.objects.create(

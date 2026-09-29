@@ -58,6 +58,9 @@ class EventOut(Schema):
     qv_credits: int
     voting_opens_at: datetime | None
     voting_closes_at: datetime | None
+    vote_burst_limit: int
+    vote_trusted_networks: list[str]
+    vote_email_domains: list[str]
     submissions_are_open: bool
 
 
@@ -78,6 +81,9 @@ class EventSettings(Schema):
     qv_credits: int | None = None
     voting_opens_at: datetime | None = None
     voting_closes_at: datetime | None = None
+    vote_burst_limit: int | None = None
+    vote_trusted_networks: list[str] | None = None
+    vote_email_domains: list[str] | None = None
 
 
 class EventCreate(EventSettings):

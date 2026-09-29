@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320" role="img" aria-labelledby="t d">
+  <title id="t">Raptor Desk</title>
+  <desc id="d">The hackathon judging desk for DOGFOOD 2026</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b0f17"/>
+      <stop offset="1" stop-color="#161e31"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fb923c"/>
+      <stop offset="1" stop-color="#ea580c"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="320" fill="url(#bg)"/>
+  <g opacity="0.12" stroke="#f97316" stroke-width="1">
+    <path d="M0 260 H1280 M0 200 H1280 M0 140 H1280 M0 80 H1280"/>
+    <path d="M160 0 V320 M320 0 V320 M480 0 V320 M640 0 V320 M800 0 V320 M960 0 V320 M1120 0 V320"/>
+  </g>
+  <g transform="translate(96 92)">
+    <rect width="136" height="136" rx="28" fill="url(#accent)"/>
+    <path d="M38 102V34h38a24 24 0 0 1 0 48H58l30 20" fill="none" stroke="#0b0f17" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="280" y="160" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="76" font-weight="700" fill="#f8fafc">Raptor Desk</text>
+  <text x="282" y="214" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="30" fill="#cbd5e1">The hackathon judging desk for DOGFOOD 2026</text>
+  <g font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="20" fill="#e2e8f0">
+    <rect x="282" y="238" width="170" height="36" rx="18" fill="#10b981" fill-opacity="0.18" stroke="#10b981" stroke-opacity="0.5" />
+    <text x="367" y="262" text-anchor="middle">T1 to T4 verified</text>
+    <rect x="466" y="238" width="190" height="36" rx="18" fill="#f97316" fill-opacity="0.18" stroke="#f97316" stroke-opacity="0.5" />
+    <text x="561" y="262" text-anchor="middle">4 bonus challenges</text>
+    <rect x="670" y="238" width="214" height="36" rx="18" fill="#6366f1" fill-opacity="0.18" stroke="#818cf8" stroke-opacity="0.5" />
+    <text x="777" y="262" text-anchor="middle">signed, verifiable results</text>
+  </g>
+</svg>

@@ -22,8 +22,8 @@
   <p>
     <span class="tag">not started: {{ progress.totals.not_started }}</span>
     <span class="tag">in progress: {{ progress.totals.in_progress }}</span>
-    <span class="tag">done: {{ progress.totals.done }}</span>
-    <span class="tag">overdue: {{ progress.totals.overdue }}</span>
+    <span class="tag ok">done: {{ progress.totals.done }}</span>
+    <span class="tag {% if progress.totals.overdue %}bad{% endif %}">overdue: {{ progress.totals.overdue }}</span>
     <span class="tag">no assignments: {{ progress.totals.unassigned }}</span>
   </p>
   <p><a href="/o/events/{{ event.id }}/exports">CSV exports</a></p>

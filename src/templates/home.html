@@ -1,24 +1,59 @@
 {% extends "base.html" %}
+{% load results_tags %}
+
+{% block title %}Raptor Desk · hackathon judging you can defend{% endblock %}
 
 {% block content %}
-<hgroup>
-  <h1>Raptor Desk</h1>
-  <p>The hackathon judging desk you can run on Monday.</p>
-</hgroup>
-<p>Rankings that show their math and flag their own doubt, access sealed per role in the backend, and an audit trail nobody can rewrite.</p>
+<section class="hero">
+  <div>
+    <h1>Judging you can defend.</h1>
+    <p class="lead">Submissions, judging and a public vote in one portal. Every ranking shows how it was made, says where
+      the evidence is thin, and is signed so anyone can check it later.</p>
+    <div class="actions">
+      {% if demo_profile %}<a href="/tour" role="button">Take the five-minute tour</a>{% endif %}
+      <a href="#events" role="button" class="secondary">Browse events</a>
+    </div>
+  </div>
 
-{% if demo_profile %}<p class="notice"><a href="/tour">Evaluating Raptor Desk? Take the five-minute tour</a>, or use a demo account on the <a href="/login">sign-in page</a>.</p>{% endif %}
+  {% if showcase %}
+  <article class="hero-panel" aria-labelledby="showcase-title">
+    <header><span id="showcase-title">{{ showcase.event.name }}: published results</span></header>
+    <table>
+      <thead><tr><th scope="col">Place</th><th scope="col">Project</th><th scope="col">Score</th><th scope="col">Chance of top {{ showcase.cutoff }}</th></tr></thead>
+      <tbody>
+      {% for row in showcase.rows %}
+        <tr>
+          <td class="mono">{{ row.place }}</td>
+          <td><a href="/projects/{{ row.project }}">{{ row.name }}</a></td>
+          <td class="mono">{{ row.score|floatformat:2 }}</td>
+          <td>{% chance row.p_top|get_item:showcase.cutoff_key %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <footer>{{ showcase.reviews }} reviews, bias-corrected · signed snapshot {{ showcase.hash|slice:":16" }}… ·
+      <a href="/events/{{ showcase.event.id }}/results">method card</a></footer>
+  </article>
+  {% endif %}
+</section>
 
 <section aria-labelledby="events">
   <h2 id="events">Events</h2>
+  <div class="event-grid">
   {% for event in events %}
     <article>
+      <span class="tag {% if event.phase == 'published' %}ok{% elif event.phase == 'judging' or event.phase == 'submissions' %}warn{% endif %}">{{ event.get_phase_display }}</span>
       <h3><a href="/events/{{ event.id }}">{{ event.name }}</a></h3>
-      <p class="muted">{{ event.get_phase_display }}{% if event.submissions_close_at %} · submissions close {{ event.submissions_close_at|date:"Y-m-d H:i" }} UTC{% endif %}</p>
-      <a href="/events/{{ event.id }}/projects">Browse projects</a>
+      <p class="muted">{% if event.voting_is_open %}Community vote open{% elif event.submissions_are_open %}Submissions open until {{ event.submissions_close_at|date:"j M, H:i" }} UTC{% elif event.submissions_close_at %}Submissions closed {{ event.submissions_close_at|date:"j M Y" }}{% else %}&nbsp;{% endif %}</p>
+      <p class="links">
+        <a href="/events/{{ event.id }}/projects">Projects</a>
+        {% if event.phase == "published" %}<a href="/events/{{ event.id }}/results">Results</a>{% endif %}
+        {% if event.voting_is_open %}<a href="/events/{{ event.id }}">Vote</a>{% endif %}
+      </p>
     </article>
   {% empty %}
-    <p>No public events yet.</p>
+    <p class="muted">No public events yet.</p>
   {% endfor %}
+  </div>
 </section>
 {% endblock %}

@@ -98,6 +98,18 @@ class Event(models.Model):
     qv_credits = models.PositiveSmallIntegerField(default=9)
     voting_opens_at = models.DateTimeField(null=True, blank=True)
     voting_closes_at = models.DateTimeField(null=True, blank=True)
+    vote_burst_limit = models.PositiveSmallIntegerField(
+        default=10,
+        help_text="Votes from one network per minute before more are held for review.",
+    )
+    vote_trusted_networks = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="CIDR ranges (the venue's network) never held as a burst.",
+    )
+    vote_email_domains = models.JSONField(
+        default=list, blank=True, help_text="If set, email voting links only for these domains."
+    )
 
     created_at = models.DateTimeField(default=clock.now)
     updated_at = models.DateTimeField(auto_now=True)

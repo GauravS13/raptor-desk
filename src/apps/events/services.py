@@ -188,7 +188,35 @@ EDITABLE_FIELDS = {
     "qv_credits",
     "voting_opens_at",
     "voting_closes_at",
+    "vote_burst_limit",
+    "vote_trusted_networks",
+    "vote_email_domains",
 }
+
+
+def clean_voting_lists(fields: dict[str, Any]) -> dict[str, Any]:
+    """Normalise the trusted networks (CIDR) and allowed email domains, or refuse them."""
+    import ipaddress
+
+    if "vote_trusted_networks" in fields:
+        networks = []
+        for raw in fields["vote_trusted_networks"] or []:
+            try:
+                networks.append(str(ipaddress.ip_network(str(raw).strip(), strict=False)))
+            except ValueError as exc:
+                raise unprocessable(
+                    f"Not a network range: {raw!r} (use CIDR, e.g. 10.0.0.0/16)"
+                ) from exc
+        fields["vote_trusted_networks"] = sorted(set(networks))
+    if "vote_email_domains" in fields:
+        domains = []
+        for raw in fields["vote_email_domains"] or []:
+            domain = str(raw).strip().lower().lstrip("@")
+            if not domain or "." not in domain or " " in domain:
+                raise unprocessable(f"Not an email domain: {raw!r}")
+            domains.append(domain)
+        fields["vote_email_domains"] = sorted(set(domains))
+    return fields
 
 
 @transaction.atomic
@@ -226,6 +254,7 @@ def update_event(actor: Principal, event: Event, **fields: Any) -> Event:
     unknown = set(fields) - EDITABLE_FIELDS
     if unknown:
         raise unprocessable("Unknown event fields.", {"fields": sorted(unknown)})
+    fields = clean_voting_lists(fields)
     changed = {key: value for key, value in fields.items() if getattr(event, key) != value}
     for key, value in changed.items():
         setattr(event, key, value)

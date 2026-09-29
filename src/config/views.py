@@ -13,9 +13,29 @@ define("public.home", Rule(public=True, description="The start page is public.")
 @policy("public.home")
 def home(request: HttpRequest) -> HttpResponse:
     from apps.events.models import Event, Phase
+    from apps.judging.models import Publication
 
     events = Event.objects.exclude(phase=Phase.DRAFT).order_by("-created_at")
-    context = {"events": events, "demo_profile": settings.PROFILE == "demo"}
+    # A real, published ranking for the hero: public data only, from a signed snapshot.
+    publication = (
+        Publication.objects.select_related("snapshot", "event").order_by("-published_at").first()
+    )
+    showcase = None
+    if publication is not None:
+        payload = publication.snapshot.payload
+        showcase = {
+            "event": publication.event,
+            "rows": payload["ranking"][:5],
+            "cutoff": 3 if 3 in payload.get("cutoffs", []) else payload["cutoffs"][0],
+            "cutoff_key": str(3 if 3 in payload.get("cutoffs", []) else payload["cutoffs"][0]),
+            "hash": publication.snapshot.payload_hash,
+            "reviews": payload.get("reviews"),
+        }
+    context = {
+        "events": events,
+        "demo_profile": settings.PROFILE == "demo",
+        "showcase": showcase,
+    }
     return render(request, "home.html", context)
 
 

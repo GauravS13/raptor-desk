@@ -138,6 +138,12 @@ Everything has a safe default. Set these in `docker-compose.yml` or an override 
 | `RD_SECRET_KEY` | created in the volume | supply your own secret instead |
 | `RD_WEB_WORKERS` | `3` | gunicorn worker processes |
 | `RD_LOG_FORMAT` / `RD_LOG_LEVEL` | `json` / `INFO` | logging |
+| `RD_WEBHOOK_ALLOW_PRIVATE` | on in `demo`, off in `production` | let webhooks reach private or loopback addresses |
+
+Per event, in **Settings**:
+- the community vote's burst threshold
+- trusted venue networks (CIDR), whose votes are never held
+- the email domains allowed to request voting links
 
 ## Going to production
 
